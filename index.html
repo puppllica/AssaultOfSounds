@@ -8,14 +8,14 @@
         body { margin: 0; background: black; color: #ff8c00; font-family: 'Courier New', Courier, monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
         #ui-layer { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; z-index: 10; }
         .hidden { display: none !important; }
-        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 5; transition: border-color 0.2s, opacity 0.2s; }
-        #game-frame.reloading { border-color: #552200; opacity: 0.5; }
-        #logo { width: 80%; max-width: 600px; margin-bottom: 20px; opacity: 0; transition: opacity 2s; }
-        .menu-item { font-size: 1.5rem; margin: 15px; cursor: pointer; border: 1px solid #ff8c00; padding: 10px 40px; width: 220px; transition: 0.3s; }
-        .menu-item:hover { background: #ff8c00; color: black; }
+        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 5; transition: border-color 0.1s; }
+        #game-frame.reloading { border-color: #331100; }
+        #logo { width: 80%; max-width: 600px; margin-bottom: 20px; transition: opacity 2s; }
         #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; font-size: 1.5rem; pointer-events: none; font-weight: bold; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 6; }
         #result-screen { background: rgba(0,0,0,0.9); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .stat-line { font-size: 1.2rem; margin: 10px; color: #aaa; }
+        .btn { font-size: 1.5rem; margin-top: 30px; cursor: pointer; border: 1px solid #ff8c00; padding: 10px 40px; }
     </style>
 </head>
 <body>
@@ -26,30 +26,18 @@
 <div id="ui-layer">
     <div id="boot-screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="tap-to-boot">INITIALIZING SYSTEM... [TAP TO START]</div>
-    </div>
-
-    <div id="main-menu" class="hidden">
-        <h1 style="letter-spacing: 10px;">MAIN MENU</h1>
-        <div class="menu-item" onclick="menuAction('GAME')">START</div>
-        <div class="menu-item" onclick="menuAction('TRAINING')">TRAINING</div>
-        <div class="menu-item" onclick="menuAction('SETTINGS')">SETTINGS</div>
-    </div>
-
-    <div id="settings-screen" class="hidden">
-        <h2>AUDIO CALIBRATION</h2>
-        <input type="range" id="pan-bias" min="-1" max="1" step="0.1" value="0" style="width:300px; accent-color:#ff8c00;">
-        <div class="menu-item" onclick="saveSettings()">SAVE & BACK</div>
+        <div id="status-text">SYSTEM INITIALIZING... [TAP TO LAUNCH]</div>
     </div>
 
     <div id="result-screen" class="hidden">
-        <div id="result-msg" style="font-size: 2.5rem; margin-bottom: 30px;"></div>
-        <div class="menu-item" onclick="changeState('MENU')">RETURN TO MENU</div>
+        <h1 style="letter-spacing: 5px;">MISSION COMPLETE</h1>
+        <div id="score-details"></div>
+        <div class="btn" onclick="location.reload()">RE-DEPLOY</div>
     </div>
 
     <div id="hud" class="hidden">
-        <div>HITS: <span id="score">0</span> / 10</div>
-        <div>TIME: <span id="timer">30</span>s</div>
+        <div>HITS: <span id="hits">0</span> / 10</div>
+        <div>TIME: <span id="timer">60</span>s</div>
     </div>
 </div>
 
@@ -57,100 +45,47 @@
     let audioCtx;
     const soundBuffers = {};
     let gameState = 'BOOT';
-    let score = 0;
-    let timeLeft = 30;
-    let panBias = 0;
+    let hits = 0;
+    let shotsFired = 0;
+    let timeLeft = 60;
     let timerInterval;
     let canShoot = true;
     
-    let enemyPos = { x: 0 }; 
     let enemyAngle = 0;
+    let targetAngle = 0;
     let enemySpeed = 0.015;
     let enemySource, enemyPanner;
 
-    // サウンドファイルのリスト
     const soundList = {
         menu_select: 'sounds/menu_select.mp3',
-        missile: 'sounds/missile.mp3',
         enemy_engine: 'sounds/enemy_engine.mp3',
         hit_feedback: 'sounds/hit_feedback.mp3',
         break_feedback: 'sounds/break_feedback.mp3'
     };
 
-    async function initAudio() {
+    async function initGame() {
         if (audioCtx) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        document.getElementById('logo').style.opacity = 1;
-        document.getElementById('tap-to-boot').innerText = "LOADING ASSETS...";
+        document.getElementById('status-text').innerText = "LOADING ASSETS...";
 
-        // 全サウンドのプリロード
         for (const [name, url] of Object.entries(soundList)) {
             try {
                 const response = await fetch(url);
                 const arrayBuffer = await response.arrayBuffer();
                 soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) {
-                console.warn(`Failed to load ${url}, will use synth.`);
-            }
+            } catch (e) { console.warn(name + " load failed"); }
         }
 
-        document.getElementById('tap-to-boot').innerText = "SYSTEM ONLINE";
-        playSound('menu_select', 440, 0.2);
-        setTimeout(() => changeState('MENU'), 1500);
-    }
-
-    function playSound(name, fallbackFreq = 440, duration = 0.2, pan = 0) {
-        if (soundBuffers[name]) {
-            const source = audioCtx.createBufferSource();
-            source.buffer = soundBuffers[name];
-            const panner = audioCtx.createStereoPanner();
-            panner.pan.value = Math.max(-1, Math.min(1, pan + panBias));
-            source.connect(panner).connect(audioCtx.destination);
-            source.start();
-            return source;
-        } else {
-            // ファイルがない場合の電子音代用
-            playElectronic(fallbackFreq, duration, 'sine', pan);
-        }
-    }
-
-    function playElectronic(freq, duration, type, pan) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        const panner = audioCtx.createStereoPanner();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        panner.pan.value = Math.max(-1, Math.min(1, pan + panBias));
-        osc.connect(gain).connect(panner).connect(audioCtx.destination);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-    }
-
-    function changeState(newState) {
-        gameState = newState;
-        clearInterval(timerInterval);
-        if (enemySource) { enemySource.stop(); enemySource = null; }
-        document.querySelectorAll('#ui-layer > div').forEach(div => div.classList.add('hidden'));
-        
-        if (newState === 'MENU') document.getElementById('main-menu').classList.remove('hidden');
-        else if (newState === 'SETTINGS') { document.getElementById('settings-screen').classList.remove('hidden'); startCalibration(); }
-        else if (newState === 'GAME' || newState === 'TRAINING') { document.getElementById('hud').classList.remove('hidden'); startGame(); }
-        else if (newState === 'RESULT') document.getElementById('result-screen').classList.remove('hidden');
-    }
-
-    function menuAction(state) {
-        playSound('menu_select');
-        changeState(state);
+        startGame();
     }
 
     function startGame() {
-        score = 0; timeLeft = 30; canShoot = true;
-        document.getElementById('score').innerText = score;
-        document.getElementById('timer').innerText = timeLeft;
+        gameState = 'GAME';
+        hits = 0; shotsFired = 0; timeLeft = 60;
+        document.getElementById('boot-screen').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
         
-        // 敵のエンジン音ループ開始
+        // エンジン音ループ
         if (soundBuffers['enemy_engine']) {
             enemySource = audioCtx.createBufferSource();
             enemySource.buffer = soundBuffers['enemy_engine'];
@@ -160,69 +95,106 @@
             enemySource.start();
         }
 
-        if (gameState === 'GAME') {
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').innerText = timeLeft;
-                if (timeLeft <= 0) endGame("MISSION FAILED");
-            }, 1000);
-        }
-        requestAnimationFrame(gameLoop);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+
+        requestAnimationFrame(update);
     }
 
-    function gameLoop() {
-        if (gameState !== 'GAME' && gameState !== 'TRAINING') return;
-        enemyAngle += enemySpeed;
-        enemyPos.x = Math.sin(enemyAngle) * 1.8; 
-        if (enemyPanner) enemyPanner.pan.value = Math.max(-1, Math.min(1, enemyPos.x + panBias));
-        if (enemySpeed > 0.015) enemySpeed *= 0.98;
-        requestAnimationFrame(gameLoop);
+    function update() {
+        if (gameState !== 'GAME') return;
+
+        // 目標角度に向かって移動（ハメ防止のため目標角度を追う形）
+        let diff = targetAngle - enemyAngle;
+        enemyAngle += diff * enemySpeed;
+        
+        // 通常の揺らぎを追加
+        targetAngle += Math.sin(Date.now() * 0.001) * 0.02;
+
+        if (enemyPanner) {
+            // 音波の定位 (-1.0 to 1.0)
+            enemyPanner.pan.value = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
+        }
+        
+        if (enemySpeed > 0.015) enemySpeed *= 0.96; // 回避後の減速
+        requestAnimationFrame(update);
     }
 
     function shoot(e) {
-        if (gameState === 'BOOT') { initAudio(); return; }
-        if (!canShoot || (gameState !== 'GAME' && gameState !== 'TRAINING')) return;
+        if (gameState === 'BOOT') { initGame(); return; }
+        if (gameState !== 'GAME' || !canShoot) return;
 
         canShoot = false;
+        shotsFired++;
         document.getElementById('game-frame').classList.add('reloading');
-        playElectronic(100, 0.1, 'sawtooth', 0); // 攻撃音（後ほどmp3化可能）
+
+        // ダミーの射撃音（電子音）
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.connect(g).connect(audioCtx.destination);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 
         const x = ((e.touches ? e.touches[0].clientX : e.clientX) / window.innerWidth) * 2 - 1;
-        if (Math.abs(x - Math.max(-1, Math.min(1, enemyPos.x))) < 0.3) {
-            score++;
-            document.getElementById('score').innerText = score;
-            playSound('hit_feedback', 1200, 0.2, enemyPos.x);
-            flashOverlay();
-            enemySpeed = 0.15;
-            if (gameState === 'GAME' && score >= 10) {
-                setTimeout(() => {
-                    playSound('break_feedback');
-                    endGame("MISSION ACCOMPLISHED");
-                }, 300);
+        const enemyX = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
+
+        if (Math.abs(x - enemyX) < 0.25) {
+            hits++;
+            document.getElementById('hits').innerText = hits;
+            playOneShot('hit_feedback');
+            flash();
+            
+            // 回避行動：ランダムな新目標へ高速移動
+            targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
+            enemySpeed = 0.2; 
+
+            if (hits >= 10) {
+                setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
             }
         }
         setTimeout(() => { canShoot = true; document.getElementById('game-frame').classList.remove('reloading'); }, 1000);
     }
 
-    function endGame(msg) {
+    function playOneShot(name) {
+        if (!soundBuffers[name]) return;
+        const s = audioCtx.createBufferSource();
+        s.buffer = soundBuffers[name];
+        s.connect(audioCtx.destination);
+        s.start();
+    }
+
+    function endGame() {
+        gameState = 'RESULT';
         clearInterval(timerInterval);
-        document.getElementById('result-msg').innerText = msg;
-        changeState('RESULT');
+        if (enemySource) enemySource.stop();
+
+        const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
+        const timeBonus = timeLeft * 100;
+        const accBonus = Math.floor(accuracy * 5000);
+        const baseScore = hits * 1000;
+        const total = baseScore + timeBonus + accBonus;
+
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('score-details').innerHTML = `
+            <div class="stat-line">BASE HITS (${hits}): ${baseScore}</div>
+            <div class="stat-line">TIME BONUS (${timeLeft}s): +${timeBonus}</div>
+            <div class="stat-line">ACCURACY (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
+            <h2 style="color:#ff8c00; font-size:2.5rem;">TOTAL: ${total}</h2>
+        `;
     }
 
-    function flashOverlay() {
-        const ov = document.getElementById('overlay');
-        ov.style.opacity = 1;
-        setTimeout(() => ov.style.opacity = 0, 100);
+    function flash() {
+        const o = document.getElementById('overlay');
+        o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100);
     }
 
-    function startCalibration() {
-        const slider = document.getElementById('pan-bias');
-        slider.oninput = (e) => { panBias = parseFloat(e.target.value); playElectronic(440, 0.05, 'sine', 0); };
-    }
-    function saveSettings() { playSound('menu_select'); changeState('MENU'); }
-
-    window.addEventListener('mousedown', (e) => { if(e.button === 0) shoot(e); });
+    window.addEventListener('mousedown', (e) => { if(e.button===0) shoot(e); });
     window.addEventListener('touchstart', (e) => { e.preventDefault(); shoot(e); }, {passive:false});
 </script>
 </body>
