@@ -48,6 +48,7 @@
     let timeLeft = 60;
     let timerInterval;
     let canShoot = true;
+    let isLocked = false; // 敵の移動をロックするフラグ
     
     let enemyAngle = 0;
     let targetAngle = 0;
@@ -104,15 +105,20 @@
     function update() {
         if (gameState !== 'GAME') return;
 
-        let diff = targetAngle - enemyAngle;
-        enemyAngle += diff * enemySpeed;
-        targetAngle += Math.sin(Date.now() * 0.001) * 0.02;
+        // 【変更】isLockedがfalseの時だけ角度を更新する
+        if (!isLocked) {
+            let diff = targetAngle - enemyAngle;
+            enemyAngle += diff * enemySpeed;
+            targetAngle += Math.sin(Date.now() * 0.001) * 0.02;
+
+            if (enemySpeed > 0.015) enemySpeed *= 0.96;
+        }
 
         if (enemyPanner) {
+            // 敵が止まっていても、現在の角度に基づいて音の定位を維持する
             enemyPanner.pan.value = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
         }
         
-        if (enemySpeed > 0.015) enemySpeed *= 0.96;
         requestAnimationFrame(update);
     }
 
@@ -121,42 +127,42 @@
         if (gameState !== 'GAME' || !canShoot) return;
 
         canShoot = false;
+        isLocked = true; // 敵の移動を停止
         shotsFired++;
         document.getElementById('game-frame').classList.add('reloading');
         
-        // 攻撃時の発射音（即座に再生）
+        // 発射音
         playOneShot('missile', 0, 0.6);
 
         const x = ((e.touches ? e.touches[0].clientX : e.clientX) / window.innerWidth) * 2 - 1;
         const enemyXAtShoot = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
 
-        // 判定ロジック
-        if (Math.abs(x - enemyXAtShoot) < 0.25) {
-            // 【修正】1秒後に命中音とエフェクトを発生させる
-            setTimeout(() => {
-                if (gameState !== 'GAME') return; // ゲーム終了後は鳴らさない
+        // 判定（1秒後の処理）
+        setTimeout(() => {
+            if (gameState !== 'GAME') return;
 
+            // 当たっていた場合の処理
+            if (Math.abs(x - enemyXAtShoot) < 0.25) {
                 hits++;
                 document.getElementById('hits').innerText = hits;
-                
-                // 1秒後の敵の位置ではなく、命中した瞬間の定位で音を鳴らす
                 playOneShot('hit_feedback', enemyXAtShoot);
                 flash();
                 
-                // 被弾後のランダム回避
+                // 被弾後のランダム目標設定
                 targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
                 enemySpeed = 0.2; 
-
+                
                 if (hits >= 10) {
-                    setTimeout(() => { 
-                        playOneShot('break_feedback'); 
-                        endGame(); 
-                    }, 500);
+                    setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
                 }
-            }, 1000); // 1秒（1000ミリ秒）のディレイ
-        }
+            }
+            
+            // ロックを解除して移動再開（当たっても外れても解除）
+            isLocked = false; 
+
+        }, 1000);
         
-        // 次の射撃までのクールタイム（1秒）
+        // リロード完了タイマー（発射から1秒）
         setTimeout(() => { 
             canShoot = true; 
             document.getElementById('game-frame').classList.remove('reloading'); 
