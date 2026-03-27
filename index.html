@@ -10,7 +10,7 @@
         .hidden { display: none !important; }
         #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 5; transition: border-color 0.1s; }
         #game-frame.reloading { border-color: #331100; }
-        #logo { width: 80%; max-width: 600px; margin-bottom: 20px; transition: opacity 2s; }
+        #game-frame.damaged { border-color: #ff0000; box-shadow: inset 0 0 50px #ff0000; }
         #hud { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; font-size: 1.5rem; pointer-events: none; font-weight: bold; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 6; }
         #result-screen { background: rgba(0,0,0,0.9); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
@@ -25,8 +25,7 @@
 
 <div id="ui-layer">
     <div id="boot-screen">
-        <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text">SYSTEM INITIALIZING... [TAP TO LAUNCH]</div>
+        <div id="status-text" style="font-size: 1.5rem;">SYSTEM INITIALIZING... [TAP TO LAUNCH]</div>
     </div>
 
     <div id="result-screen" class="hidden">
@@ -46,6 +45,7 @@
     const soundBuffers = {};
     let gameState = 'BOOT';
     let hits = 0;
+    let intercepts = 0;
     let shotsFired = 0;
     let timeLeft = 60;
     let timerInterval;
@@ -56,8 +56,11 @@
     let enemySpeed = 0.015;
     let enemySource, enemyPanner;
 
+    let activeMissile = null; 
+
     const soundList = {
         menu_select: 'sounds/menu_select.mp3',
+        missile: 'sounds/missile.mp3', // 自機の攻撃音として使用
         enemy_engine: 'sounds/enemy_engine.mp3',
         hit_feedback: 'sounds/hit_feedback.mp3',
         break_feedback: 'sounds/break_feedback.mp3'
@@ -75,17 +78,15 @@
                 soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
             } catch (e) { console.warn(name + " load failed"); }
         }
-
         startGame();
     }
 
     function startGame() {
         gameState = 'GAME';
-        hits = 0; shotsFired = 0; timeLeft = 60;
+        hits = 0; intercepts = 0; shotsFired = 0; timeLeft = 60;
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         
-        // エンジン音ループ
         if (soundBuffers['enemy_engine']) {
             enemySource = audioCtx.createBufferSource();
             enemySource.buffer = soundBuffers['enemy_engine'];
@@ -99,27 +100,48 @@
             timeLeft--;
             document.getElementById('timer').innerText = timeLeft;
             if (timeLeft <= 0) endGame();
+            if (Math.random() < 0.15 && !activeMissile) spawnEnemyMissile();
         }, 1000);
 
         requestAnimationFrame(update);
     }
 
+    function spawnEnemyMissile() {
+        const startPan = (Math.random() * 2 - 1); 
+        activeMissile = {
+            pan: startPan,
+            distance: 1.0, 
+            sourceInfo: playOneShot('missile', startPan, 0.3) // 敵ミサイル接近音（小音量）
+        };
+    }
+
     function update() {
         if (gameState !== 'GAME') return;
 
-        // 目標角度に向かって移動（ハメ防止のため目標角度を追う形）
         let diff = targetAngle - enemyAngle;
         enemyAngle += diff * enemySpeed;
-        
-        // 通常の揺らぎを追加
         targetAngle += Math.sin(Date.now() * 0.001) * 0.02;
 
         if (enemyPanner) {
-            // 音波の定位 (-1.0 to 1.0)
             enemyPanner.pan.value = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
         }
         
-        if (enemySpeed > 0.015) enemySpeed *= 0.96; // 回避後の減速
+        if (activeMissile) {
+            activeMissile.distance -= 0.008; // 接近速度
+            activeMissile.pan *= 0.985; 
+            
+            // 接近音のパンニングを動的に更新
+            if (activeMissile.sourceInfo && activeMissile.sourceInfo.panner) {
+                activeMissile.sourceInfo.panner.pan.value = activeMissile.pan;
+            }
+
+            if (activeMissile.distance <= 0) {
+                takeDamage();
+                activeMissile = null;
+            }
+        }
+
+        if (enemySpeed > 0.015) enemySpeed *= 0.96;
         requestAnimationFrame(update);
     }
 
@@ -130,42 +152,63 @@
         canShoot = false;
         shotsFired++;
         document.getElementById('game-frame').classList.add('reloading');
-
-        // ダミーの射撃音（電子音）
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.connect(g).connect(audioCtx.destination);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        
+        // 【修正】自機の攻撃音としてmissile.mp3を正面(0)で再生
+        playOneShot('missile', 0, 0.6);
 
         const x = ((e.touches ? e.touches[0].clientX : e.clientX) / window.innerWidth) * 2 - 1;
-        const enemyX = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
-
-        if (Math.abs(x - enemyX) < 0.25) {
-            hits++;
-            document.getElementById('hits').innerText = hits;
-            playOneShot('hit_feedback');
-            flash();
-            
-            // 回避行動：ランダムな新目標へ高速移動
-            targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
-            enemySpeed = 0.2; 
-
-            if (hits >= 10) {
-                setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
+        
+        if (activeMissile && Math.abs(x - activeMissile.pan) < 0.3) {
+            intercepts++;
+            if (activeMissile.sourceInfo) activeMissile.sourceInfo.source.stop();
+            playOneShot('hit_feedback', activeMissile.pan);
+            activeMissile = null;
+        } 
+        else {
+            const enemyX = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
+            if (Math.abs(x - enemyX) < 0.25) {
+                hits++;
+                document.getElementById('hits').innerText = hits;
+                playOneShot('hit_feedback', enemyX);
+                flash();
+                targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
+                enemySpeed = 0.2; 
+                if (hits >= 10) {
+                    setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
+                }
             }
         }
         setTimeout(() => { canShoot = true; document.getElementById('game-frame').classList.remove('reloading'); }, 1000);
     }
 
-    function playOneShot(name) {
-        if (!soundBuffers[name]) return;
+    function playOneShot(name, pan = 0, volume = 0.5) {
+        if (!soundBuffers[name]) return null;
         const s = audioCtx.createBufferSource();
+        const g = audioCtx.createGain();
+        const p = audioCtx.createStereoPanner();
+        
         s.buffer = soundBuffers[name];
-        s.connect(audioCtx.destination);
+        p.pan.value = Math.max(-1, Math.min(1, pan));
+        g.gain.value = volume;
+        
+        s.connect(p).connect(g).connect(audioCtx.destination);
         s.start();
+        return { source: s, panner: p };
+    }
+
+    function takeDamage() {
+        timeLeft = Math.max(0, timeLeft - 5);
+        const frame = document.getElementById('game-frame');
+        frame.classList.add('damaged');
+        setTimeout(() => frame.classList.remove('damaged'), 500);
+        
+        // ダメージ音（低周波）
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+        osc.connect(g).connect(audioCtx.destination);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.6);
     }
 
     function endGame() {
@@ -175,14 +218,15 @@
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
         const timeBonus = timeLeft * 100;
+        const interceptBonus = intercepts * 500;
         const accBonus = Math.floor(accuracy * 5000);
-        const baseScore = hits * 1000;
-        const total = baseScore + timeBonus + accBonus;
+        const total = (hits * 1000) + timeBonus + accBonus + interceptBonus;
 
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
         document.getElementById('score-details').innerHTML = `
-            <div class="stat-line">BASE HITS (${hits}): ${baseScore}</div>
+            <div class="stat-line">HITS (${hits}): ${hits * 1000}</div>
+            <div class="stat-line">INTERCEPT (${intercepts}): +${interceptBonus}</div>
             <div class="stat-line">TIME BONUS (${timeLeft}s): +${timeBonus}</div>
             <div class="stat-line">ACCURACY (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
             <h2 style="color:#ff8c00; font-size:2.5rem;">TOTAL: ${total}</h2>
