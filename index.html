@@ -13,16 +13,14 @@
         #hud { position: absolute; top: 40px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; font-weight: bold; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 6; }
         
-        /* トップ画面のロゴとテキストの配置 */
+        /* トップ画面の構成 */
         #boot-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #logo { width: 80%; max-width: 500px; margin-bottom: 40px; }
-        
-        /* [TAP TO START] の点滅アニメーション */
+        #logo { width: 85%; max-width: 500px; margin-bottom: 35px; }
         .blink { animation: blink-animation 1.5s steps(2, start) infinite; -webkit-animation: blink-animation 1.5s steps(2, start) infinite; }
         @keyframes blink-animation { to { visibility: hidden; } }
         @-webkit-keyframes blink-animation { to { visibility: hidden; } }
 
-        /* リザルト画面（iPhone対策済み） */
+        /* リザルト画面（iPhone セーフエリア対応済み） */
         #result-screen { background: rgba(0,0,0,0.95); width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-bottom: 100px; box-sizing: border-box; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; }
         .btn-container { display: flex; flex-direction: column; gap: 20px; margin-top: 30px; }
@@ -38,7 +36,12 @@
 <div id="ui-layer">
     <div id="boot-screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.5rem; letter-spacing: 2px;">[TAP TO START]</div>
+        <div id="status-text" class="blink" style="font-size: 1.5rem; letter-spacing: 2px; margin-bottom: 30px;">[TAP TO START]</div>
+        <div style="font-size: 0.9rem; color: #888; line-height: 1.6; letter-spacing: 1px;">
+            PLEASE TURN ON SOUND<br>
+            HEADPHONES REQUIRED<br>
+            <span style="color: #666; font-size: 0.8rem;">(AUDIO-ONLY GAMEPLAY)</span>
+        </div>
     </div>
 
     <div id="result-screen" class="hidden">
@@ -75,7 +78,6 @@
         if (audioCtx) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        // 読み込み中は点滅を止め、テキストを変える
         const status = document.getElementById('status-text');
         status.classList.remove('blink');
         status.innerText = "LOADING ASSETS...";
@@ -94,6 +96,7 @@
         gameState = 'GAME';
         hits = 0; shotsFired = 0; timeLeft = 60;
         document.getElementById('boot-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('hits').innerText = hits;
         document.getElementById('timer').innerText = timeLeft;
@@ -132,6 +135,7 @@
         if (gameState !== 'GAME' || !canShoot) return;
         canShoot = false; isLocked = true; shotsFired++;
         document.getElementById('game-frame').classList.add('reloading');
+        
         playOneShot('missile', 0, 0.6);
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const x = (clientX / window.innerWidth) * 2 - 1;
@@ -185,7 +189,10 @@
         `;
 
         const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent('TOTAL SCORE: ' + total + ' #ASSAULTOFSOUNDS')}&url=${encodeURIComponent(window.location.href)}`;
-        document.getElementById('share-btn').onclick = (e) => { window.open(shareUrl, '_blank'); };
+        document.getElementById('share-btn').onclick = (e) => { 
+            e.preventDefault();
+            window.open(shareUrl, '_blank'); 
+        };
     }
 
     function flash() {
@@ -193,11 +200,11 @@
         o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100);
     }
 
-    // イベント設定（iPhone対策済み）
+    // iPhone / スマホ対応イベント
     window.addEventListener('touchstart', (e) => { 
         if (gameState === 'RESULT') return;
         if (gameState === 'GAME') { e.preventDefault(); shoot(e); } 
-        else if (gameState === 'BOOT') { initGame(); } // BOOT画面でのタップ
+        else if (gameState === 'BOOT') { initGame(); }
     }, {passive:false});
     
     window.addEventListener('mousedown', (e) => { 
@@ -205,14 +212,16 @@
         else if (gameState === 'BOOT' && e.button === 0) { initGame(); }
     });
 
+    // RE-DEPLOY ボタン専用（内部リセット）
     document.getElementById('redeploy-btn').addEventListener('touchstart', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         gameState = 'BOOT';
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('boot-screen').classList.remove('hidden');
         const status = document.getElementById('status-text');
-        status.innerText = "[TAP TO START]"; // テキストを戻す
-        status.classList.add('blink'); // 点滅を再開
+        status.innerText = "[TAP TO START]";
+        status.classList.add('blink');
     });
 </script>
 </body>
