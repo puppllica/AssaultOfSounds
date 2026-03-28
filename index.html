@@ -11,21 +11,36 @@
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
-        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 10; transition: border-color 0.1s; }
+        /* プレイ範囲フレーム */
+        #game-frame { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            box-sizing: border-box; border: 4px solid #ff8c00; 
+            pointer-events: none; z-index: 10;
+            transition: border-color 0.1s, box-shadow 0.3s;
+        }
         #game-frame.reloading { border-color: #331100; }
+        #game-frame.ace-active { border-color: #ff0000; box-shadow: inset 0 0 30px rgba(255,0,0,0.5); }
 
-        #reticle { position: absolute; width: 60px; height: 60px; pointer-events: none; opacity: 0; z-index: 90; transform: translate(-50%, -50%); transition: opacity 0.2s; }
+        /* ロックオンアイコン */
+        #reticle { 
+            position: absolute; width: 60px; height: 60px; 
+            pointer-events: none; opacity: 0; z-index: 90;
+            transform: translate(-50%, -50%); 
+            transition: opacity 0.2s;
+        }
         #reticle::before, #reticle::after { content: ''; position: absolute; background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
         #reticle::before { top: 30px; left: 0; width: 60px; height: 2px; } 
         #reticle::after { top: 0; left: 30px; width: 2px; height: 60px; } 
+        #reticle.ace-reticle::before, #reticle.ace-reticle::after { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
+
         .lock-corner { position: absolute; width: 12px; height: 12px; border: 2px solid #ff8c00; pointer-events: none; }
         .l-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
         .l-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
         .l-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+        .ace-reticle .lock-corner { border-color: #ff0000; }
 
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
-        /* Timeの桁数が変わってもズレないよう幅を確保 */
         #timer-box { min-width: 140px; text-align: left; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
         
@@ -35,7 +50,6 @@
 
         .sound-notice-box { border: 1px double #ff3300; padding: 15px 25px; margin-bottom: 30px; }
         .sound-notice-main { font-size: 1.1rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 6px; }
-        .sound-notice-sub { color: #888; font-size: 0.8rem; letter-spacing: 1px; line-height: 1.4; }
 
         .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.6; max-width: 90%; }
         .instruction-item { margin-bottom: 20px; }
@@ -43,24 +57,24 @@
         .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
         #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; }
-        #version-tag { color: #666; margin-bottom: 2px; display: block; }
 
-        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 100px; }
-        .stat-line { font-size: 0.9rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
-        .btn-container { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
-        .btn { font-size: 1.2rem; cursor: pointer; border: 2px solid #ff8c00; padding: 12px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; pointer-events: auto; letter-spacing: 2px; }
+        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; }
+        .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
+        .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 10px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; letter-spacing: 2px; pointer-events: auto; }
         .btn-share { border-color: #1DA1F2; color: #1DA1F2; }
+        
+        .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="game-frame" class="hidden"></div>
-
 <div id="reticle">
     <div class="lock-corner l-tl"></div><div class="lock-corner l-tr"></div>
     <div class="lock-corner l-bl"></div><div class="lock-corner l-br"></div>
 </div>
-
 <div id="overlay"></div>
 <div id="hud" class="hidden">
     <div>HITS: <span id="hits">0</span> / 10</div>
@@ -73,10 +87,7 @@
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
-            <span class="sound-notice-sub">
-                このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。<br>
-                イヤホン・ヘッドホンの使用を強く推奨します。
-            </span>
+            <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。</span>
         </div>
         <div class="instruction-box">
             <div class="instruction-item">
@@ -89,17 +100,18 @@
             </div>
         </div>
         <div id="footer-tag">
-            <span id="version-tag">Ver 1.0.1.0</span>
+            <span style="color: #666; margin-bottom: 2px; display: block;">Ver 1.0.2.0</span>
             Created by AsaoKridanik
         </div>
     </div>
 
     <div id="result-screen" class="screen hidden">
-        <h1 style="letter-spacing: 5px; color: #ff8c00; font-size: 1.8rem;">MISSION COMPLETE</h1>
+        <h1 id="result-title" style="letter-spacing: 5px; color: #ff8c00; font-size: 1.8rem;">MISSION COMPLETE</h1>
         <div id="score-details" style="margin: 20px 0;"></div>
         <div class="btn-container">
             <a href="#" id="share-btn" class="btn btn-share" target="_blank">SHARE ON X</a>
             <div id="retry-btn" class="btn">RETRY</div>
+            <div id="ace-btn" class="btn btn-ace hidden">ACE MODE</div>
         </div>
     </div>
 </div>
@@ -109,7 +121,12 @@
     const soundBuffers = {};
     let gameState = 'BOOT';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
-    let enemyAngle = 0, targetAngle = 0, enemySpeed = 0.015, enemySource, enemyPanner;
+    let enemyAngle = 0, targetAngle = 0, enemySource, enemyPanner;
+    
+    // パラメータ
+    let currentMode = 'NORMAL'; 
+    let aceUnlocked = false; 
+    let baseSpeed = 0.015, wobbleAmp = 0.02, wobbleFreq = 0.001, currentEnemySpeed = 0.015;
 
     const soundList = {
         menu_select: 'sounds/menu_select.mp3',
@@ -119,14 +136,28 @@
         break_feedback: 'sounds/break_feedback.mp3'
     };
 
-    async function initGame() {
+    async function initGame(mode) {
+        currentMode = mode;
+        if (currentMode === 'ACE') {
+            baseSpeed = 0.035;   
+            wobbleAmp = 0.08;    
+            wobbleFreq = 0.003;  
+            document.getElementById('game-frame').className = 'ace-active';
+            document.getElementById('reticle').className = 'ace-reticle';
+        } else {
+            baseSpeed = 0.015;
+            wobbleAmp = 0.02;
+            wobbleFreq = 0.001;
+            document.getElementById('game-frame').className = '';
+            document.getElementById('reticle').className = '';
+        }
+
         if (audioCtx) {
             if (audioCtx.state === 'suspended') await audioCtx.resume();
             startGame();
             return;
         }
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        document.getElementById('status-text').innerText = "SYSTEM INITIALIZING...";
         for (const [name, url] of Object.entries(soundList)) {
             try {
                 const response = await fetch(url);
@@ -140,6 +171,7 @@
     function startGame() {
         gameState = 'GAME';
         hits = 0; shotsFired = 0; timeLeft = 60.0;
+        currentEnemySpeed = baseSpeed;
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('game-frame').classList.remove('hidden');
@@ -156,16 +188,10 @@
             enemySource.start();
         }
 
-        // 100ms（0.1秒）ごとに更新
         timerInterval = setInterval(() => {
             timeLeft -= 0.1;
-            if (timeLeft <= 0) {
-                timeLeft = 0;
-                document.getElementById('timer').innerText = "0.0";
-                endGame();
-            } else {
-                document.getElementById('timer').innerText = timeLeft.toFixed(1);
-            }
+            if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+            else { document.getElementById('timer').innerText = timeLeft.toFixed(1); }
         }, 100);
         requestAnimationFrame(update);
     }
@@ -174,9 +200,9 @@
         if (gameState !== 'GAME') return;
         if (!isLocked) {
             let diff = targetAngle - enemyAngle;
-            enemyAngle += diff * enemySpeed;
-            targetAngle += Math.sin(Date.now() * 0.001) * 0.02;
-            if (enemySpeed > 0.015) enemySpeed *= 0.96;
+            enemyAngle += diff * currentEnemySpeed;
+            targetAngle += Math.sin(Date.now() * wobbleFreq) * wobbleAmp;
+            if (currentEnemySpeed > baseSpeed) currentEnemySpeed *= 0.96;
         }
         if (enemyPanner) enemyPanner.pan.value = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
         requestAnimationFrame(update);
@@ -187,11 +213,9 @@
         canShoot = false; isLocked = true; shotsFired++;
         
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const reticle = document.getElementById('reticle');
-        reticle.style.left = clientX + 'px';
-        reticle.style.top = '50%'; 
-        reticle.style.opacity = '1';
-        setTimeout(() => { if(gameState === 'GAME') reticle.style.opacity = '0'; }, 1000);
+        const ret = document.getElementById('reticle');
+        ret.style.left = clientX + 'px'; ret.style.top = '50%'; ret.style.opacity = '1';
+        setTimeout(() => { if(gameState === 'GAME') ret.style.opacity = '0'; }, 1000);
         document.getElementById('game-frame').classList.add('reloading');
 
         playOneShot('missile', 0, 0.6);
@@ -206,16 +230,12 @@
                 playOneShot('hit_feedback', enemyXAtShoot);
                 flash();
                 targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
-                enemySpeed = 0.2; 
+                currentEnemySpeed = 0.2; 
                 if (hits >= 10) setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
             }
             isLocked = false; 
         }, 1000);
-        
-        setTimeout(() => { 
-            canShoot = true; 
-            document.getElementById('game-frame').classList.remove('reloading');
-        }, 1000);
+        setTimeout(() => { canShoot = true; document.getElementById('game-frame').classList.remove('reloading'); }, 1000);
     }
 
     function playOneShot(name, pan = 0, volume = 0.5) {
@@ -238,54 +258,43 @@
         document.getElementById('game-frame').classList.add('hidden');
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
-        // タイムボーナスも小数点を含むので、整数に丸める
         const timeBonus = Math.floor(timeLeft * 100);
         const accBonus = Math.floor(accuracy * 5000);
         const total = (hits * 1000) + timeBonus + accBonus;
 
+        if (total >= 18000) aceUnlocked = true;
+        if (aceUnlocked) document.getElementById('ace-btn').classList.remove('hidden');
+
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
         
+        const scoreColor = currentMode === 'ACE' ? '#ff0000' : '#ff8c00';
+        
+        // スコア表示を以前の詳細フォーマットに差し戻し
         document.getElementById('score-details').innerHTML = `
             <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
             <div class="stat-line">TIME BONUS (${timeLeft.toFixed(1)}s): +${timeBonus}</div>
             <div class="stat-line">ACCURACY BONUS (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
-            <h2 style="color:#ff8c00; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
+            <h2 style="color:${scoreColor}; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
         `;
-
-        const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent('TOTAL SCORE: ' + total + ' #ASSAULTOFSOUNDS')}&url=${encodeURIComponent(window.location.href)}`;
+        
+        const modeSuffix = currentMode === 'ACE' ? ' (ACE MODE)' : '';
+        const shareText = `TOTAL SCORE: ${total}${modeSuffix} #ASSAULTOFSOUNDS`;
+        const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`;
         document.getElementById('share-btn').onclick = (e) => { e.preventDefault(); window.open(shareUrl, '_blank'); };
     }
 
-    function flash() {
-        const o = document.getElementById('overlay');
-        o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100);
-    }
+    function flash() { const o = document.getElementById('overlay'); o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100); }
 
     const handleAction = (e) => {
-        if (gameState === 'BOOT') { initGame(); }
-        else if (gameState === 'GAME') {
-            if (e.type === 'touchstart') e.preventDefault();
-            shoot(e);
-        }
+        if (gameState === 'BOOT') initGame('NORMAL');
+        else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
     };
-
     window.addEventListener('touchstart', handleAction, {passive:false});
     window.addEventListener('mousedown', handleAction);
 
-    const resetGame = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        gameState = 'BOOT';
-        document.getElementById('result-screen').classList.add('hidden');
-        document.getElementById('boot-screen').classList.remove('hidden');
-        document.getElementById('status-text').innerText = "[TAP TO START]";
-        document.getElementById('status-text').classList.add('blink');
-    };
-
-    const retryBtn = document.getElementById('retry-btn');
-    retryBtn.addEventListener('click', resetGame);
-    retryBtn.addEventListener('touchstart', resetGame, {passive:false});
+    document.getElementById('retry-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('NORMAL'); });
+    document.getElementById('ace-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('ACE'); });
 </script>
 </body>
 </html>
