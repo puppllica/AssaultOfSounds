@@ -25,6 +25,8 @@
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
 
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
+        /* Timeの桁数が変わってもズレないよう幅を確保 */
+        #timer-box { min-width: 140px; text-align: left; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
         
         #logo { width: 75%; max-width: 450px; margin-bottom: 20px; }
@@ -62,7 +64,7 @@
 <div id="overlay"></div>
 <div id="hud" class="hidden">
     <div>HITS: <span id="hits">0</span> / 10</div>
-    <div>TIME: <span id="timer">60</span>s</div>
+    <div id="timer-box">TIME: <span id="timer">60.0</span>s</div>
 </div>
 
 <div id="ui-layer">
@@ -106,7 +108,7 @@
     let audioCtx;
     const soundBuffers = {};
     let gameState = 'BOOT';
-    let hits = 0, shotsFired = 0, timeLeft = 60, timerInterval, canShoot = true, isLocked = false;
+    let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
     let enemyAngle = 0, targetAngle = 0, enemySpeed = 0.015, enemySource, enemyPanner;
 
     const soundList = {
@@ -137,13 +139,13 @@
 
     function startGame() {
         gameState = 'GAME';
-        hits = 0; shotsFired = 0; timeLeft = 60;
+        hits = 0; shotsFired = 0; timeLeft = 60.0;
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('game-frame').classList.remove('hidden');
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('hits').innerText = hits;
-        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer').innerText = timeLeft.toFixed(1);
         
         if (soundBuffers['enemy_engine']) {
             enemySource = audioCtx.createBufferSource();
@@ -154,11 +156,17 @@
             enemySource.start();
         }
 
+        // 100ms（0.1秒）ごとに更新
         timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById('timer').innerText = timeLeft;
-            if (timeLeft <= 0) endGame();
-        }, 1000);
+            timeLeft -= 0.1;
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                document.getElementById('timer').innerText = "0.0";
+                endGame();
+            } else {
+                document.getElementById('timer').innerText = timeLeft.toFixed(1);
+            }
+        }, 100);
         requestAnimationFrame(update);
     }
 
@@ -230,7 +238,8 @@
         document.getElementById('game-frame').classList.add('hidden');
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
-        const timeBonus = timeLeft * 100;
+        // タイムボーナスも小数点を含むので、整数に丸める
+        const timeBonus = Math.floor(timeLeft * 100);
         const accBonus = Math.floor(accuracy * 5000);
         const total = (hits * 1000) + timeBonus + accBonus;
 
@@ -239,7 +248,7 @@
         
         document.getElementById('score-details').innerHTML = `
             <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
-            <div class="stat-line">TIME BONUS (${timeLeft}s): +${timeBonus}</div>
+            <div class="stat-line">TIME BONUS (${timeLeft.toFixed(1)}s): +${timeBonus}</div>
             <div class="stat-line">ACCURACY BONUS (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
             <h2 style="color:#ff8c00; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
         `;
