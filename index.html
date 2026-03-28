@@ -11,22 +11,10 @@
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
-        /* プレイ範囲フレーム（外枠） */
-        #game-frame { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            box-sizing: border-box; border: 4px solid #ff8c00; 
-            pointer-events: none; z-index: 10;
-            transition: border-color 0.1s;
-        }
+        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 10; transition: border-color 0.1s; }
         #game-frame.reloading { border-color: #331100; }
 
-        /* ロックオンアイコン（中央固定） */
-        #reticle { 
-            position: absolute; width: 60px; height: 60px; 
-            pointer-events: none; opacity: 0; z-index: 90;
-            transform: translate(-50%, -50%); 
-            transition: opacity 0.2s;
-        }
+        #reticle { position: absolute; width: 60px; height: 60px; pointer-events: none; opacity: 0; z-index: 90; transform: translate(-50%, -50%); transition: opacity 0.2s; }
         #reticle::before, #reticle::after { content: ''; position: absolute; background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
         #reticle::before { top: 30px; left: 0; width: 60px; height: 2px; } 
         #reticle::after { top: 0; left: 30px; width: 2px; height: 60px; } 
@@ -36,7 +24,6 @@
         .l-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
 
-        /* HUDデザイン */
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
         
@@ -44,14 +31,12 @@
         .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
         @keyframes blink-animation { to { visibility: hidden; } }
 
-        /* 案A：サウンド警告デザイン */
         .sound-notice-box { border: 1px double #ff3300; padding: 15px 25px; margin-bottom: 30px; }
         .sound-notice-main { font-size: 1.1rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 6px; }
         .sound-notice-sub { color: #888; font-size: 0.8rem; letter-spacing: 1px; line-height: 1.4; }
 
-        /* How To Play（2項目に整理） */
         .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.6; max-width: 90%; }
-        .instruction-item { margin-bottom: 20px; } /* 少し間隔を広げる */
+        .instruction-item { margin-bottom: 20px; }
         .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; border-left: 3px solid #ff8c00; padding-left: 8px; text-align: left; }
         .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
@@ -59,9 +44,9 @@
         #version-tag { color: #666; margin-bottom: 2px; display: block; }
 
         #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 100px; }
-        .stat-line { font-size: 1rem; margin: 8px; color: #aaa; }
-        .btn-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 12px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; pointer-events: auto; }
+        .stat-line { font-size: 0.9rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
+        .btn-container { display: flex; flex-direction: column; gap: 15px; margin-top: 25px; }
+        .btn { font-size: 1.2rem; cursor: pointer; border: 2px solid #ff8c00; padding: 12px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; pointer-events: auto; letter-spacing: 2px; }
         .btn-share { border-color: #1DA1F2; color: #1DA1F2; }
     </style>
 </head>
@@ -83,9 +68,7 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
-        
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
             <span class="sound-notice-sub">
@@ -93,7 +76,6 @@
                 イヤホン・ヘッドホンの使用を強く推奨します。
             </span>
         </div>
-        
         <div class="instruction-box">
             <div class="instruction-item">
                 <span class="instruction-en">01. SEARCH</span>
@@ -104,7 +86,6 @@
                 <span class="instruction-jp">画面をタップしてミサイルを発射。</span>
             </div>
         </div>
-
         <div id="footer-tag">
             <span id="version-tag">Ver 1.0.0.1</span>
             Created by AsaoKridanik
@@ -112,11 +93,11 @@
     </div>
 
     <div id="result-screen" class="screen hidden">
-        <h1 style="letter-spacing: 5px; color: #ff8c00;">MISSION COMPLETE</h1>
-        <div id="score-details"></div>
+        <h1 style="letter-spacing: 5px; color: #ff8c00; font-size: 1.8rem;">MISSION COMPLETE</h1>
+        <div id="score-details" style="margin: 20px 0;"></div>
         <div class="btn-container">
             <a href="#" id="share-btn" class="btn btn-share" target="_blank">SHARE ON X</a>
-            <div id="redeploy-btn" class="btn">RE-DEPLOY</div>
+            <div id="retry-btn" class="btn">RETRY</div>
         </div>
     </div>
 </div>
@@ -257,10 +238,10 @@
         document.getElementById('result-screen').classList.remove('hidden');
         
         document.getElementById('score-details').innerHTML = `
-            <div class="stat-line">基本命中 (${hits}): ${hits * 1000}</div>
-            <div class="stat-line">タイムボーナス (${timeLeft}s): +${timeBonus}</div>
-            <div class="stat-line">命中精度 (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
-            <h2 style="color:#ff8c00; font-size:1.8rem; margin-top:20px;">トータルスコア: ${total}</h2>
+            <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
+            <div class="stat-line">TIME BONUS (${timeLeft}s): +${timeBonus}</div>
+            <div class="stat-line">ACCURACY BONUS (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
+            <h2 style="color:#ff8c00; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
         `;
 
         const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent('TOTAL SCORE: ' + total + ' #ASSAULTOFSOUNDS')}&url=${encodeURIComponent(window.location.href)}`;
@@ -293,9 +274,9 @@
         document.getElementById('status-text').classList.add('blink');
     };
 
-    const redeployBtn = document.getElementById('redeploy-btn');
-    redeployBtn.addEventListener('click', resetGame);
-    redeployBtn.addEventListener('touchstart', resetGame, {passive:false});
+    const retryBtn = document.getElementById('retry-btn');
+    retryBtn.addEventListener('click', resetGame);
+    retryBtn.addEventListener('touchstart', resetGame, {passive:false});
 </script>
 </body>
 </html>
