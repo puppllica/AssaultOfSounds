@@ -11,6 +11,7 @@
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
+        /* プレイ範囲フレーム（外枠） */
         #game-frame { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             box-sizing: border-box; border: 4px solid #ff8c00; 
@@ -19,6 +20,7 @@
         }
         #game-frame.reloading { border-color: #331100; }
 
+        /* ロックオンアイコン（中央固定） */
         #reticle { 
             position: absolute; width: 60px; height: 60px; 
             pointer-events: none; opacity: 0; z-index: 90;
@@ -42,12 +44,14 @@
         .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
         @keyframes blink-animation { to { visibility: hidden; } }
 
+        /* 案A：サウンド警告デザイン */
         .sound-notice-box { border: 1px double #ff3300; padding: 15px 25px; margin-bottom: 30px; }
         .sound-notice-main { font-size: 1.1rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 6px; }
         .sound-notice-sub { color: #888; font-size: 0.8rem; letter-spacing: 1px; line-height: 1.4; }
 
+        /* How To Play（2項目に整理） */
         .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.6; max-width: 90%; }
-        .instruction-item { margin-bottom: 15px; }
+        .instruction-item { margin-bottom: 20px; } /* 少し間隔を広げる */
         .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; border-left: 3px solid #ff8c00; padding-left: 8px; text-align: left; }
         .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
@@ -79,7 +83,9 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
+        
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
+        
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
             <span class="sound-notice-sub">
@@ -87,6 +93,7 @@
                 イヤホン・ヘッドホンの使用を強く推奨します。
             </span>
         </div>
+        
         <div class="instruction-box">
             <div class="instruction-item">
                 <span class="instruction-en">01. SEARCH</span>
@@ -96,11 +103,8 @@
                 <span class="instruction-en">02. ATTACK</span>
                 <span class="instruction-jp">画面をタップしてミサイルを発射。</span>
             </div>
-            <div class="instruction-item">
-                <span class="instruction-en">03. PURSUIT</span>
-                <span class="instruction-jp">敵は被弾後に位置を変える。音の変化を逃さず追跡せよ。</span>
-            </div>
         </div>
+
         <div id="footer-tag">
             <span id="version-tag">Ver 1.0.0.1</span>
             Created by AsaoKridanik
