@@ -11,23 +11,10 @@
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
-        /* 【完全復活】画面のフチを一周囲うオレンジの線（プレイ範囲） */
-        #game-frame { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            box-sizing: border-box; border: 4px solid #ff8c00; 
-            pointer-events: none; z-index: 10; /* 最背面付近 */
-            transition: border-color 0.1s; /* 色の変化をスムーズに */
-        }
-        /* 発射時（リロード中）のフレームの色 */
+        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 10; transition: border-color 0.1s; }
         #game-frame.reloading { border-color: #331100; }
 
-        /* ロックオンアイコン（タップ位置・中央固定） */
-        #reticle { 
-            position: absolute; width: 60px; height: 60px; 
-            pointer-events: none; opacity: 0; z-index: 90;
-            transform: translate(-50%, -50%); 
-            transition: opacity 0.2s;
-        }
+        #reticle { position: absolute; width: 60px; height: 60px; pointer-events: none; opacity: 0; z-index: 90; transform: translate(-50%, -50%); transition: opacity 0.2s; }
         #reticle::before, #reticle::after { content: ''; position: absolute; background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
         #reticle::before { top: 30px; left: 0; width: 60px; height: 2px; } 
         #reticle::after { top: 0; left: 30px; width: 2px; height: 60px; } 
@@ -37,23 +24,27 @@
         .l-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
 
-        /* HUDの位置調整 */
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
         
-        #logo { width: 70%; max-width: 400px; margin-bottom: 25px; }
-        .blink { animation: blink-animation 1.5s steps(2, start) infinite; -webkit-animation: blink-animation 1.5s steps(2, start) infinite; }
+        /* トップ画面の洗練 */
+        #logo { width: 75%; max-width: 450px; margin-bottom: 20px; }
+        .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
         @keyframes blink-animation { to { visibility: hidden; } }
-        @-webkit-keyframes blink-animation { to { visibility: hidden; } }
 
-        .sound-warning { font-size: 0.9rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; margin-bottom: 30px; line-height: 1.4; }
-        .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.5; max-width: 90%; }
+        /* サウンド警告エリア */
+        .sound-notice-box { border: 1px double #ff3300; padding: 10px 20px; margin-bottom: 30px; }
+        .sound-notice-main { font-size: 1rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 4px; }
+        .sound-notice-sub { color: #888; font-size: 0.8rem; letter-spacing: 1px; }
+
+        /* How To Play */
+        .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.6; max-width: 90%; }
         .instruction-item { margin-bottom: 15px; }
-        .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; }
-        .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; }
+        .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; border-left: 3px solid #ff8c00; padding-left: 8px; text-align: left; }
+        .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
-        #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #555; pointer-events: none; z-index: 200; line-height: 1.4; }
-        #version-tag { color: #888; margin-bottom: 2px; display: block; }
+        #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; }
+        #version-tag { color: #666; margin-bottom: 2px; display: block; }
 
         #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 100px; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; }
@@ -80,25 +71,29 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 20px;">[TAP TO START]</div>
-        <div class="sound-warning">
-            [SOUND REQUIRED]<br>
-            <span style="color: #888; font-size: 0.75rem; font-weight: normal;">PLEASE TURN ON SOUND / HEADPHONES RECOMMENDED</span>
+        
+        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
+        
+        <div class="sound-notice-box">
+            <span class="sound-notice-main">⚠️ 音を出してください / SOUND REQUIRED</span>
+            <span class="sound-notice-sub">イヤホン・ヘッドホン推奨 (AUDIO-ONLY GAMEPLAY)</span>
         </div>
+        
         <div class="instruction-box">
             <div class="instruction-item">
-                <span class="instruction-en">1. SEARCH: Listen closely to locate the enemy.</span>
-                <span class="instruction-jp">索敵: 耳を澄まして敵の位置を探れ。</span>
+                <span class="instruction-en">01. SEARCH</span>
+                <span class="instruction-jp">耳を澄まして、敵の「音」の位置を探れ。</span>
             </div>
             <div class="instruction-item">
-                <span class="instruction-en">2. ATTACK: Tap the screen to fire a missile.</span>
-                <span class="instruction-jp">攻撃: 画面をタップしてミサイルを発射。</span>
+                <span class="instruction-en">02. ATTACK</span>
+                <span class="instruction-jp">画面をタップし、予測地点へミサイルを放て。</span>
             </div>
             <div class="instruction-item">
-                <span class="instruction-en">3. PURSUIT: Track and eliminate the fleeing enemy.</span>
-                <span class="instruction-jp">追撃: 逃げる敵を追いかけて追撃せよ。</span>
+                <span class="instruction-en">03. PURSUIT</span>
+                <span class="instruction-jp">被弾した敵は逃走する。音の変化を逃さず追撃せよ。</span>
             </div>
         </div>
+
         <div id="footer-tag">
             <span id="version-tag">Ver 1.0.0.1</span>
             Created by AsaoKridanik
@@ -137,7 +132,7 @@
             return;
         }
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        document.getElementById('status-text').innerText = "LOADING...";
+        document.getElementById('status-text').innerText = "SYSTEM INITIALIZING...";
         for (const [name, url] of Object.entries(soundList)) {
             try {
                 const response = await fetch(url);
@@ -153,7 +148,7 @@
         hits = 0; shotsFired = 0; timeLeft = 60;
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
-        document.getElementById('game-frame').classList.remove('hidden'); // フレームを表示
+        document.getElementById('game-frame').classList.remove('hidden');
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('hits').innerText = hits;
         document.getElementById('timer').innerText = timeLeft;
@@ -192,15 +187,11 @@
         canShoot = false; isLocked = true; shotsFired++;
         
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        
-        // アイコンの表示（高さは50%に固定）
         const reticle = document.getElementById('reticle');
         reticle.style.left = clientX + 'px';
         reticle.style.top = '50%'; 
         reticle.style.opacity = '1';
         setTimeout(() => { if(gameState === 'GAME') reticle.style.opacity = '0'; }, 1000);
-
-        // フレームの色を暗くする（リロード演出）
         document.getElementById('game-frame').classList.add('reloading');
 
         playOneShot('missile', 0, 0.6);
@@ -223,7 +214,6 @@
         
         setTimeout(() => { 
             canShoot = true; 
-            // フレームの色を戻す
             document.getElementById('game-frame').classList.remove('reloading');
         }, 1000);
     }
@@ -245,7 +235,7 @@
         clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         document.getElementById('reticle').style.opacity = '0';
-        document.getElementById('game-frame').classList.add('hidden'); // フレームを隠す
+        document.getElementById('game-frame').classList.add('hidden');
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
         const timeBonus = timeLeft * 100;
@@ -288,6 +278,8 @@
         gameState = 'BOOT';
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('boot-screen').classList.remove('hidden');
+        document.getElementById('status-text').innerText = "[TAP TO START]";
+        document.getElementById('status-text').classList.add('blink');
     };
 
     const redeployBtn = document.getElementById('redeploy-btn');
