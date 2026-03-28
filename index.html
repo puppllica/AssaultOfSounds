@@ -6,30 +6,45 @@
     <title>ASSAULT OF SOUNDS</title>
     <style>
         body { margin: 0; background: black; color: #ff8c00; font-family: 'Courier New', Courier, monospace; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-        #ui-layer { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        
+        #ui-layer { position: absolute; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
-        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 5; }
-        #hud { position: absolute; top: 40px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 15; font-weight: bold; }
-        #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 6; }
+        /* レティクル（フレーム）常時表示 */
+        #game-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; border: 4px solid #ff8c00; pointer-events: none; z-index: 10; transition: border-color 0.1s; }
+        #game-frame.reloading { border-color: #331100; }
         
-        #logo { width: 70%; max-width: 400px; margin-bottom: 20px; }
-        .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
+        #hud { position: absolute; top: 40px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
+        #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 50; }
+        
+        /* ロゴ周りの余白調整 */
+        #logo { width: 70%; max-width: 400px; margin-bottom: 25px; }
+        
+        /* [TAP TO START] 点滅 */
+        .blink { animation: blink-animation 1.5s steps(2, start) infinite; -webkit-animation: blink-animation 1.5s steps(2, start) infinite; }
         @keyframes blink-animation { to { visibility: hidden; } }
+        @-webkit-keyframes blink-animation { to { visibility: hidden; } }
 
-        /* How To Play スタイル */
-        .instruction-box { margin: 20px 0; font-size: 0.85rem; color: #ccc; line-height: 1.4; max-width: 90%; }
-        .instruction-item { margin-bottom: 12px; }
-        .instruction-en { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-transform: uppercase; }
+        /* サウンド警告（ロゴの下） */
+        .sound-warning { font-size: 0.9rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; margin-bottom: 30px; line-height: 1.4; }
+        .sound-sub-warning { color: #888; font-size: 0.75rem; font-weight: normal; letter-spacing: 1px; }
 
-        /* バージョン表記 */
-        #version-tag { position: absolute; bottom: 10px; right: 15px; font-size: 0.7rem; color: #444; pointer-events: none; }
+        /* How To Play（英語メイン） */
+        .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.5; max-width: 90%; }
+        .instruction-item { margin-bottom: 15px; }
+        .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; }
 
-        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 100px; z-index: 100; }
+        /* 画面最下部のフッター（Ver、コピーライト） */
+        #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #555; pointer-events: none; z-index: 200; line-height: 1.4; }
+        #version-tag { color: #888; margin-bottom: 2px; display: block; } /* バージョンを見やすく */
+
+        /* リザルト画面 */
+        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 100px; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; }
         .btn-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 12px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; }
+        .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 12px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; pointer-events: auto; }
         .btn-share { border-color: #1DA1F2; color: #1DA1F2; }
     </style>
 </head>
@@ -45,28 +60,33 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 15px;">[TAP TO START]</div>
+        
+        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 2px; margin-bottom: 20px;">[TAP TO START]</div>
+        
+        <div class="sound-warning">
+            [SOUND REQUIRED]<br>
+            <span class="sound-sub-warning">PLEASE TURN ON SOUND / HEADPHONES RECOMMENDED<br>(AUDIO-ONLY GAMEPLAY)</span>
+        </div>
         
         <div class="instruction-box">
             <div class="instruction-item">
-                1. 索敵: 耳を澄まして敵の位置を探れ。<br>
-                <span class="instruction-en">SEARCH: Listen closely to locate the enemy.</span>
+                <span class="instruction-en">1. SEARCH: Listen closely to locate the enemy.</span>
+                <span class="instruction-jp">索敵: 耳を澄まして敵の位置を探れ。</span>
             </div>
             <div class="instruction-item">
-                2. 攻撃: 画面をタップしてミサイルを発射。<br>
-                <span class="instruction-en">ATTACK: Tap the screen to fire a missile.</span>
+                <span class="instruction-en">2. ATTACK: Tap the screen to fire a missile.</span>
+                <span class="instruction-jp">攻撃: 画面をタップしてミサイルを発射。</span>
             </div>
             <div class="instruction-item">
-                3. 予測: 敵は被弾後に位置を変える。音の変化を逃さず追跡せよ。<br>
-                <span class="instruction-en">PREDICT: Enemy relocates after hit. Follow the sound.</span>
+                <span class="instruction-en">3. PURSUIT: Track and eliminate the fleeing enemy.</span>
+                <span class="instruction-jp">追撃: 逃げる敵を追いかけて追撃せよ。</span>
             </div>
         </div>
 
-        <div style="font-size: 0.8rem; color: #666; letter-spacing: 1px; margin-top: 10px;">
-            PLEASE TURN ON SOUND / HEADPHONES REQUIRED<br>
-            (AUDIO-ONLY GAMEPLAY)
+        <div id="footer-tag">
+            <span id="version-tag">Ver 1.0.0.4</span>
+            © 2026 AsaoKridanik. All Rights Reserved.
         </div>
-        <div id="version-tag">Ver 1.0.0.1</div>
     </div>
 
     <div id="result-screen" class="screen hidden">
@@ -102,6 +122,7 @@
         }
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         document.getElementById('status-text').innerText = "LOADING...";
+        document.getElementById('status-text').classList.remove('blink');
         for (const [name, url] of Object.entries(soundList)) {
             try {
                 const response = await fetch(url);
@@ -117,7 +138,6 @@
         hits = 0; shotsFired = 0; timeLeft = 60;
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
-        document.getElementById('boot-screen').style.zIndex = "1"; // 背景へ
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('hits').innerText = hits;
         document.getElementById('timer').innerText = timeLeft;
@@ -154,8 +174,11 @@
     function shoot(e) {
         if (gameState !== 'GAME' || !canShoot) return;
         canShoot = false; isLocked = true; shotsFired++;
-        document.getElementById('game-frame').style.borderColor = '#331100';
+        
+        // レティクルの色変化
+        document.getElementById('game-frame').classList.add('reloading');
         playOneShot('missile', 0, 0.6);
+        
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const x = (clientX / window.innerWidth) * 2 - 1;
         const enemyXAtShoot = Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.5));
@@ -173,7 +196,11 @@
             }
             isLocked = false; 
         }, 1000);
-        setTimeout(() => { canShoot = true; document.getElementById('game-frame').style.borderColor = '#ff8c00'; }, 1000);
+        
+        setTimeout(() => { 
+            canShoot = true; 
+            document.getElementById('game-frame').classList.remove('reloading'); 
+        }, 1000);
     }
 
     function playOneShot(name, pan = 0, volume = 0.5) {
@@ -200,7 +227,7 @@
 
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
-        document.getElementById('result-screen').style.zIndex = "100"; // 最前面へ
+        
         document.getElementById('score-details').innerHTML = `
             <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
             <div class="stat-line">TIME BONUS (${timeLeft}s): +${timeBonus}</div>
@@ -217,27 +244,32 @@
         o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100);
     }
 
-    // イベントリスナー
-    window.addEventListener('touchstart', (e) => { 
+    // イベントリスナーの統一
+    const handleAction = (e) => {
         if (gameState === 'BOOT') { initGame(); }
-        else if (gameState === 'GAME') { e.preventDefault(); shoot(e); } 
-    }, {passive:false});
-    
-    window.addEventListener('mousedown', (e) => { 
-        if (gameState === 'BOOT') { initGame(); }
-        else if (gameState === 'GAME') { shoot(e); }
-    });
+        else if (gameState === 'GAME') {
+            if (e.type === 'touchstart') e.preventDefault();
+            shoot(e);
+        }
+    };
 
-    document.getElementById('redeploy-btn').addEventListener('touchstart', (e) => {
+    window.addEventListener('touchstart', handleAction, {passive:false});
+    window.addEventListener('mousedown', handleAction);
+
+    // リセット処理（clickとtouchstart両対応）
+    const resetGame = (e) => {
         e.preventDefault();
         e.stopPropagation();
         gameState = 'BOOT';
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('boot-screen').classList.remove('hidden');
-        document.getElementById('boot-screen').style.zIndex = "100"; // トップ画面を最前面へ
         document.getElementById('status-text').innerText = "[TAP TO START]";
         document.getElementById('status-text').classList.add('blink');
-    }, {passive:false});
+    };
+
+    const redeployBtn = document.getElementById('redeploy-btn');
+    redeployBtn.addEventListener('click', resetGame);
+    redeployBtn.addEventListener('touchstart', resetGame, {passive:false});
 </script>
 </body>
 </html>
