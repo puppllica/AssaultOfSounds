@@ -12,7 +12,6 @@
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
         .hidden { display: none !important; pointer-events: none !important; }
         
-        /* プレイ範囲フレーム */
         #game-frame { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             box-sizing: border-box; border: 4px solid #ff8c00; 
@@ -21,40 +20,24 @@
         }
         #game-frame.reloading { border-color: #331100; }
         #game-frame.ace-active { border-color: #ff0000; box-shadow: inset 0 0 30px rgba(255,0,0,0.5); }
-
-        /* TEST MODE用スタイル追加 */
         #game-frame.test-active { border-color: #00ff00; }
-        #hud.test-active { color: #00ff00; }
-        .test-reticle::before, .test-reticle::after { background: #00ff00 !important; box-shadow: 0 0 10px #00ff00 !important; }
-        .test-reticle .lock-corner { border-color: #00ff00 !important; }
-        #overlay.test-active { background: rgba(0,255,0,0.4) !important; }
 
-        /* 照準ガイドライン */
         #game-frame::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            transform: translateY(-50%);
+            content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 60px; transform: translateY(-50%);
             background-image: 
                 linear-gradient(to right, transparent calc(25% - 2px), rgba(255,140,0,0.8) calc(25% - 2px), rgba(255,140,0,0.8) calc(25% + 2px), transparent calc(25% + 2px)),
                 linear-gradient(to right, transparent calc(50% - 2.5px), rgba(255,140,0,0.8) calc(50% - 2.5px), rgba(255,140,0,0.8) calc(50% + 2.5px), transparent calc(50% + 2.5px)),
                 linear-gradient(to right, transparent calc(75% - 2px), rgba(255,140,0,0.8) calc(75% - 2px), rgba(255,140,0,0.8) calc(75% + 2px), transparent calc(75% + 2px)),
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(255,140,0,0.4) calc(50% - 1px), rgba(255,140,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
-            pointer-events: none;
-            z-index: 15;
+            pointer-events: none; z-index: 15;
         }
 
-        /* ACE MODE時 */
         #game-frame.ace-active::after {
             background-image: 
                 linear-gradient(to right, transparent calc(50% - 2.5px), rgba(255,0,0,0.8) calc(50% - 2.5px), rgba(255,0,0,0.8) calc(50% + 2.5px), transparent calc(50% + 2.5px)),
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(255,0,0,0.4) calc(50% - 1px), rgba(255,0,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
         }
 
-        /* TEST MODE時：センターを明示的に太く濃く */
         #game-frame.test-active::after {
             background-image: 
                 linear-gradient(to right, transparent calc(10% - 1px), rgba(0,255,0,0.4) calc(10% - 1px), rgba(0,255,0,0.4) calc(10% + 1px), transparent calc(10% + 1px)),
@@ -69,21 +52,9 @@
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(0,255,0,0.4) calc(50% - 1px), rgba(0,255,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
         }
 
-        /* TEST MODE用：ハイライト */
-        #test-indicator { 
-            position: absolute; width: 4px; height: 72px; 
-            top: 50%; transform: translate(-50%, -50%);
-            background: #00ff00; box-shadow: 0 0 10px #00ff00;
-            pointer-events: none; z-index: 20;
-        }
-
-        /* ロックオンアイコン */
-        #reticle { 
-            position: absolute; width: 60px; height: 60px; 
-            pointer-events: none; opacity: 0; z-index: 90;
-            transform: translate(-50%, -50%); 
-            transition: opacity 0.2s;
-        }
+        #test-indicator { position: absolute; width: 4px; height: 72px; top: 50%; transform: translate(-50%, -50%); background: #00ff00; box-shadow: 0 0 10px #00ff00; pointer-events: none; z-index: 20; }
+        
+        #reticle { position: absolute; width: 60px; height: 60px; pointer-events: none; opacity: 0; z-index: 90; transform: translate(-50%, -50%); transition: opacity 0.2s; }
         #reticle::before, #reticle::after { content: ''; position: absolute; background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
         #reticle::before { top: 30px; left: 0; width: 60px; height: 2px; } 
         #reticle::after { top: 0; left: 30px; width: 2px; height: 60px; } 
@@ -95,10 +66,19 @@
         .l-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
         .ace-reticle .lock-corner { border-color: #ff0000; }
+        .test-reticle .lock-corner { border-color: #00ff00; }
+        .test-reticle::before, .test-reticle::after { background: #00ff00 !important; box-shadow: 0 0 10px #00ff00 !important; border-color: #00ff00; }
+
+        #test-feedback { position: absolute; top: 60%; width: 100%; text-align: center; font-weight: bold; font-size: 1.2rem; color: #00ff00; text-shadow: 0 0 5px #00ff00; pointer-events: none; z-index: 150; opacity: 0; transition: opacity 0.2s; line-height: 1.5; }
 
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
+        #hud.ace-active { color: #ff0000; text-shadow: 0 0 5px #ff0000; }
+        #hud.test-active { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
         #timer-box { min-width: 140px; text-align: left; }
+        
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
+        #overlay.ace-active { background: rgba(255,0,0,0.4) !important; }
+        #overlay.test-active { background: rgba(0,255,0,0.4) !important; }
         
         #logo { width: 75%; max-width: 450px; margin-bottom: 20px; }
         .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
@@ -135,6 +115,7 @@
     <div class="lock-corner l-bl"></div><div class="lock-corner l-br"></div>
 </div>
 <div id="overlay"></div>
+<div id="test-feedback"></div>
 
 <div id="test-mode-label" class="hidden" style="position: absolute; top: 20px; width: 100%; text-align: center; color: #00ff00; font-weight: bold; font-size: 1.5rem; z-index: 120; pointer-events: none; letter-spacing: 4px;">TEST MODE</div>
 
@@ -164,8 +145,9 @@
         </div>
         <div id="footer-tag">
             <div id="test-mode-btn" style="color: #00ff00; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
-            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.0.3</span>
-            Created by <a id="author-link" href="https://x.com/asao_kridanik" target="_blank" style="color: #444; text-decoration: underline; pointer-events: auto;">AsaoKridanik</a>
+            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.0</span>
+            Created by <a id="author-link" href="https://x.com/asao_kridanik" target="_blank" style="color: #444; text-decoration: underline; pointer-events: auto;">AsaoKridanik</a><br>
+            <span style="color: #444;">Voice By ondoku3.com</span>
         </div>
     </div>
 
@@ -186,7 +168,7 @@
     const soundBuffers = {};
     let gameState = 'BOOT';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
-    let totalPrecisionBonus = 0; // 追加
+    let totalPrecisionBonus = 0;
     
     let enemyAngle = 0, targetAngle = 0;
     let enemySource, enemyPanner, enemyGain; 
@@ -198,6 +180,24 @@
 
     const testSequence = [0.0, -0.2, 0.2, -0.4, 0.4, -0.6, 0.6, -0.8, 0.8, -1.0, 1.0];
     let testStep = 0;
+    let isWaitingToReturn = false;
+    let returnTimer = null;
+    let perfectCombo = 0;
+
+    const comboTexts = [
+        "",
+        "> PERFECT <",
+        "> EXCELLENT <",
+        "> GENIUS <",
+        "> NEW TYPE <",
+        "> NANDATO !? <",
+        "> SOKOKA !! <",
+        "> YARUNA !! <",
+        "> KONO KURAI !! <",
+        "> NIGASU KAYO !! <",
+        "> Nu GUNDAM WA, DATE JA NAI !! <",
+        "> THANK YOU FOR PLAYING !! <"
+    ];
 
     const soundList = {
         menu_select: 'sounds/menu_select.mp3',
@@ -205,7 +205,12 @@
         enemy_engine: 'sounds/enemy_engine.mp3', 
         enemy_main: 'sounds/enemy_main.mp3',     
         hit_feedback: 'sounds/hit_feedback.mp3',
-        break_feedback: 'sounds/break_feedback.mp3'
+        break_feedback: 'sounds/break_feedback.mp3',
+        vo_0_9999: 'sounds/vo_0_9999.mp3',
+        vo_10000_14999: 'sounds/vo_10000_14999.mp3',
+        vo_15000_17999: 'sounds/vo_15000_17999.mp3',
+        vo_18000_19999: 'sounds/vo_18000_19999.mp3',
+        vo_20000_over: 'sounds/vo_20000_over.mp3'
     };
 
     async function initGame(mode) {
@@ -227,6 +232,8 @@
             wobbleFreq = 0.003;  
             gf.classList.add('ace-active');
             ret.classList.add('ace-reticle');
+            hud.classList.add('ace-active');
+            ovl.classList.add('ace-active');
         } else if (currentMode === 'TEST') {
             gf.classList.add('test-active');
             ret.classList.add('test-reticle');
@@ -260,7 +267,10 @@
     function startGame() {
         gameState = 'GAME';
         hits = 0; shotsFired = 0; timeLeft = 60.0; testStep = 0; totalPrecisionBonus = 0;
+        perfectCombo = 0;
         currentEnemySpeed = baseSpeed;
+        isWaitingToReturn = false;
+        document.getElementById('test-feedback').style.opacity = '0';
         
         document.getElementById('boot-screen').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
@@ -309,7 +319,7 @@
             if (enemyPanner && mainPanner && enemyGain) {
                 const currentTestPan = testSequence[testStep];
                 mainPanner.pan.value = currentTestPan;
-                enemyPanner.pan.value = currentTestPan * 1.0; // 1.0に修正
+                enemyPanner.pan.value = currentTestPan * 1.0;
                 enemyGain.gain.value = 0.5 + (Math.abs(currentTestPan) * 0.5);
                 const percent = (currentTestPan + 1) / 2 * 100;
                 document.getElementById('test-indicator').style.left = percent + '%';
@@ -324,7 +334,7 @@
             if (enemyPanner && mainPanner && enemyGain) {
                 const sinVal = Math.sin(enemyAngle);
                 mainPanner.pan.value = Math.max(-1, Math.min(1, sinVal * 1.0));
-                enemyPanner.pan.value = Math.max(-1, Math.min(1, sinVal * 1.0)); // 1.0に修正
+                enemyPanner.pan.value = Math.max(-1, Math.min(1, sinVal * 1.0));
                 enemyGain.gain.value = 0.5 + (Math.abs(sinVal) * 0.5);
             }
         }
@@ -353,13 +363,42 @@
                 flash();
                 
                 if (currentMode === 'TEST') {
+                    const testPrecision = Math.floor(300 * (1 - diff / 0.25));
+                    const rawDiff = enemyXAtShoot - x;
+                    const displayDiff = Math.floor(Math.abs(rawDiff) * 100);
+                    let errText = '';
+
+                    if (displayDiff <= 3) {
+                        perfectCombo++;
+                        let comboIndex = perfectCombo;
+                        if (comboIndex >= comboTexts.length) comboIndex = comboTexts.length - 1;
+                        errText = comboTexts[comboIndex];
+                    } else {
+                        perfectCombo = 0;
+                        if (rawDiff < 0) {
+                            errText = `<<< ${displayDiff} TGT`;
+                        } else {
+                            errText = `TGT ${displayDiff} >>>`;
+                        }
+                    }
+
+                    const tf = document.getElementById('test-feedback');
+                    tf.innerHTML = `PRECISION: +${testPrecision}<br>${errText}`;
+                    tf.style.opacity = '1';
+
                     testStep++;
                     if (testStep >= testSequence.length) {
-                        setTimeout(() => { playOneShot('break_feedback'); returnToBoot(); }, 500);
+                        isWaitingToReturn = true;
+                        setTimeout(() => { playOneShot('break_feedback'); }, 500);
+                        returnTimer = setTimeout(() => {
+                            if (isWaitingToReturn) returnToBoot();
+                        }, 3000);
+                    } else {
+                        setTimeout(() => { tf.style.opacity = '0'; }, 1500);
                     }
                 } else {
                     hits++;
-                    totalPrecisionBonus += Math.floor(300 * (1 - diff / 0.25)); // ボーナス計算
+                    totalPrecisionBonus += Math.floor(300 * (1 - diff / 0.25));
                     document.getElementById('hits').innerText = hits;
                     targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
                     currentEnemySpeed = 0.2; 
@@ -385,10 +424,13 @@
 
     function returnToBoot() {
         gameState = 'BOOT';
+        isWaitingToReturn = false;
         clearInterval(timerInterval);
+        if (returnTimer) clearTimeout(returnTimer);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
+        document.getElementById('test-feedback').style.opacity = '0';
         document.getElementById('game-frame').classList.add('hidden');
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('test-mode-label').classList.add('hidden');
@@ -424,6 +466,14 @@
         if (total >= 18000) aceUnlocked = true;
         if (aceUnlocked) document.getElementById('ace-btn').classList.remove('hidden');
 
+        let voiceKey = '';
+        if (total < 10000) voiceKey = 'vo_0_9999';
+        else if (total < 15000) voiceKey = 'vo_10000_14999';
+        else if (total < 18000) voiceKey = 'vo_15000_17999';
+        else if (total < 20000) voiceKey = 'vo_18000_19999';
+        else voiceKey = 'vo_20000_over';
+        playOneShot(voiceKey, 0, 1.0);
+
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
         
@@ -442,9 +492,18 @@
         document.getElementById('share-btn').onclick = (e) => { e.preventDefault(); window.open(shareUrl, '_blank'); };
     }
 
-    function flash() { const o = document.getElementById('overlay'); o.style.opacity = 1; setTimeout(() => o.style.opacity = 0, 100); }
+    function flash() { 
+        const o = document.getElementById('overlay'); 
+        o.style.opacity = 1; 
+        setTimeout(() => o.style.opacity = 0, 100); 
+    }
 
     const handleAction = (e) => {
+        if (isWaitingToReturn) {
+            e.preventDefault();
+            returnToBoot();
+            return;
+        }
         if (gameState === 'BOOT') initGame('NORMAL');
         else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
     };
@@ -465,4 +524,3 @@
 </script>
 </body>
 </html>
-```
