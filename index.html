@@ -440,8 +440,10 @@
     }
 
     function endGame() {
-        gameState = 'RESULT';
-        clearInterval(timerInterval);
+    // 追加：既にリザルト処理が開始されている場合は中断
+    if (gameState === 'RESULT') return; 
+    gameState = 'RESULT'; 
+    clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
