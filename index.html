@@ -94,7 +94,7 @@
 
         #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; }
 
-        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; }
+        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
         .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 10px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; letter-spacing: 2px; pointer-events: auto; }
@@ -103,6 +103,38 @@
         
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* 横向きかつ画面高が低いデバイス用の調整 */
+        @media screen and (orientation: landscape) and (max-width: 950px) {
+            .btn-container {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .btn {
+                min-width: 130px;
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+            .stat-line {
+                margin: 2px 8px;
+                font-size: 0.85rem;
+                display: inline-block;
+            }
+            #result-title {
+                font-size: 1.4rem;
+                margin-bottom: 5px;
+            }
+            #result-screen {
+                justify-content: flex-start;
+                padding-top: 10px;
+            }
+            #score-details {
+                margin: 10px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -125,7 +157,14 @@
 </div>
 
 <div id="ui-layer">
-    <div id="boot-screen" class="screen">
+    <div id="loading-screen" class="screen">
+        <div style="letter-spacing: 4px; margin-bottom: 20px;">INITIALIZING SYSTEM...</div>
+        <div style="width: 75%; max-width: 300px; height: 4px; background: #331100; border: 1px solid #ff8c00;">
+            <div id="loading-bar" style="width: 0%; height: 100%; background: #ff8c00; transition: width 0.2s;"></div>
+        </div>
+    </div>
+
+    <div id="boot-screen" class="screen hidden">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
         <div class="sound-notice-box">
@@ -145,7 +184,7 @@
         </div>
         <div id="footer-tag">
             <div id="test-mode-btn" style="color: #00ff00; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
-            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.1</span>
+            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.2</span>
             Created by <a id="author-link" href="https://x.com/asao_kridanik" target="_blank" style="color: #444; text-decoration: underline; pointer-events: auto;">AsaoKridanik</a><br>
             <span style="color: #444;">Voice By ondoku3.com</span>
         </div>
@@ -166,7 +205,8 @@
 <script>
     let audioCtx;
     const soundBuffers = {};
-    let gameState = 'BOOT';
+    const preloadedBuffers = {};
+    let gameState = 'LOADING';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
     let totalPrecisionBonus = 0;
     
@@ -213,6 +253,25 @@
         vo_20000_over: 'sounds/vo_20000_over.mp3'
     };
 
+    async function preloadAssets() {
+        const total = Object.keys(soundList).length;
+        let loaded = 0;
+        for (const [name, url] of Object.entries(soundList)) {
+            try {
+                const response = await fetch(url);
+                preloadedBuffers[name] = await response.arrayBuffer();
+            } catch (e) { console.warn(name + " load failed"); }
+            loaded++;
+            document.getElementById('loading-bar').style.width = (loaded / total * 100) + '%';
+        }
+        setTimeout(() => {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('boot-screen').classList.remove('hidden');
+            gameState = 'BOOT';
+        }, 500);
+    }
+    window.onload = preloadAssets;
+
     async function initGame(mode) {
         currentMode = mode;
         const gf = document.getElementById('game-frame');
@@ -248,18 +307,15 @@
             wobbleFreq = 0.001;
         }
 
-        if (audioCtx) {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-            startGame();
-            return;
-        }
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        for (const [name, url] of Object.entries(soundList)) {
-            try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) { console.warn(name + " load failed"); }
+            
+            for (const [name, buffer] of Object.entries(preloadedBuffers)) {
+                try {
+                    soundBuffers[name] = await audioCtx.decodeAudioData(buffer.slice(0));
+                } catch(e) { console.warn(name + " decode failed"); }
+            }
         }
         startGame();
     }
@@ -440,10 +496,8 @@
     }
 
     function endGame() {
-    // 追加：既にリザルト処理が開始されている場合は中断
-    if (gameState === 'RESULT') return; 
-    gameState = 'RESULT'; 
-    clearInterval(timerInterval);
+        gameState = 'RESULT';
+        clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
@@ -452,12 +506,14 @@
         const isCleared = hits >= 10;
         const resultTitle = document.getElementById('result-title');
         
+        let quoteHtml = '';
         if (isCleared) {
             resultTitle.innerText = 'MISSION COMPLETE';
             resultTitle.style.color = currentMode === 'ACE' ? '#ff0000' : '#ff8c00';
         } else {
             resultTitle.innerText = 'MISSION FAILED';
             resultTitle.style.color = '#aa0000';
+            quoteHtml = `<div style="color: #ff3333; font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; letter-spacing: 2px;">"NEVER GIVE UP!<br>TRUST YOUR INSTINCTS!"</div>`;
         }
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
@@ -480,7 +536,7 @@
         document.getElementById('result-screen').classList.remove('hidden');
         
         const scoreColor = currentMode === 'ACE' ? '#ff0000' : '#ff8c00';
-        document.getElementById('score-details').innerHTML = `
+        document.getElementById('score-details').innerHTML = quoteHtml + `
             <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
             <div class="stat-line">TIME BONUS (${timeLeft.toFixed(1)}s): +${timeBonus}</div>
             <div class="stat-line">ACCURACY BONUS (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
