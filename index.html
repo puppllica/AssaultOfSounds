@@ -1,577 +1,1123 @@
 <!DOCTYPE html>
+
 <html lang="ja">
+
 <head>
+
     <meta charset="UTF-8">
+
     <link rel="icon" href="img/brandlogo32.png" type="image/png">    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
     <title>ASSAULT OF SOUNDS</title>
+
     <style>
+
         body { margin: 0; background: black; color: #ff8c00; font-family: 'Courier New', Courier, monospace; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
+
         
+
         #ui-layer { position: absolute; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+
         .screen { position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; pointer-events: auto; background: black; box-sizing: border-box; padding: 20px; }
+
         .hidden { display: none !important; pointer-events: none !important; }
+
         
+
         #game-frame { 
+
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+
             box-sizing: border-box; border: 4px solid #ff8c00; 
+
             pointer-events: none; z-index: 10;
+
             transition: border-color 0.1s, box-shadow 0.3s;
+
         }
+
         #game-frame.reloading { border-color: #331100; }
+
         #game-frame.ace-active { border-color: #ff0000; box-shadow: inset 0 0 30px rgba(255,0,0,0.5); }
+
         #game-frame.test-active { border-color: #00ff00; }
 
+
+
         #game-frame::after {
+
             content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 60px; transform: translateY(-50%);
+
             background-image: 
+
                 linear-gradient(to right, transparent calc(25% - 2px), rgba(255,140,0,0.8) calc(25% - 2px), rgba(255,140,0,0.8) calc(25% + 2px), transparent calc(25% + 2px)),
+
                 linear-gradient(to right, transparent calc(50% - 2.5px), rgba(255,140,0,0.8) calc(50% - 2.5px), rgba(255,140,0,0.8) calc(50% + 2.5px), transparent calc(50% + 2.5px)),
+
                 linear-gradient(to right, transparent calc(75% - 2px), rgba(255,140,0,0.8) calc(75% - 2px), rgba(255,140,0,0.8) calc(75% + 2px), transparent calc(75% + 2px)),
+
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(255,140,0,0.4) calc(50% - 1px), rgba(255,140,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
+
             pointer-events: none; z-index: 15;
+
         }
+
+
 
         #game-frame.ace-active::after {
+
             background-image: 
+
                 linear-gradient(to right, transparent calc(50% - 2.5px), rgba(255,0,0,0.8) calc(50% - 2.5px), rgba(255,0,0,0.8) calc(50% + 2.5px), transparent calc(50% + 2.5px)),
+
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(255,0,0,0.4) calc(50% - 1px), rgba(255,0,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
+
         }
+
+
 
         #game-frame.test-active::after {
+
             background-image: 
+
                 linear-gradient(to right, transparent calc(10% - 1px), rgba(0,255,0,0.4) calc(10% - 1px), rgba(0,255,0,0.4) calc(10% + 1px), transparent calc(10% + 1px)),
+
                 linear-gradient(to right, transparent calc(20% - 1px), rgba(0,255,0,0.4) calc(20% - 1px), rgba(0,255,0,0.4) calc(20% + 1px), transparent calc(20% + 1px)),
+
                 linear-gradient(to right, transparent calc(30% - 1px), rgba(0,255,0,0.4) calc(30% - 1px), rgba(0,255,0,0.4) calc(30% + 1px), transparent calc(30% + 1px)),
+
                 linear-gradient(to right, transparent calc(40% - 1px), rgba(0,255,0,0.4) calc(40% - 1px), rgba(0,255,0,0.4) calc(40% + 1px), transparent calc(40% + 1px)),
+
                 linear-gradient(to right, transparent calc(50% - 2px), rgba(0,255,0,0.8) calc(50% - 2px), rgba(0,255,0,0.8) calc(50% + 2px), transparent calc(50% + 2px)),
+
                 linear-gradient(to right, transparent calc(60% - 1px), rgba(0,255,0,0.4) calc(60% - 1px), rgba(0,255,0,0.4) calc(60% + 1px), transparent calc(60% + 1px)),
+
                 linear-gradient(to right, transparent calc(70% - 1px), rgba(0,255,0,0.4) calc(70% - 1px), rgba(0,255,0,0.4) calc(70% + 1px), transparent calc(70% + 1px)),
+
                 linear-gradient(to right, transparent calc(80% - 1px), rgba(0,255,0,0.4) calc(80% - 1px), rgba(0,255,0,0.4) calc(80% + 1px), transparent calc(80% + 1px)),
+
                 linear-gradient(to right, transparent calc(90% - 1px), rgba(0,255,0,0.4) calc(90% - 1px), rgba(0,255,0,0.4) calc(90% + 1px), transparent calc(90% + 1px)),
+
                 linear-gradient(to bottom, transparent calc(50% - 1px), rgba(0,255,0,0.4) calc(50% - 1px), rgba(0,255,0,0.4) calc(50% + 1px), transparent calc(50% + 1px));
+
         }
 
+
+
         #test-indicator { position: absolute; width: 4px; height: 72px; top: 50%; transform: translate(-50%, -50%); background: #00ff00; box-shadow: 0 0 10px #00ff00; pointer-events: none; z-index: 20; }
+
         
+
         #reticle { position: absolute; width: 60px; height: 60px; pointer-events: none; opacity: 0; z-index: 90; transform: translate(-50%, -50%); transition: opacity 0.2s; }
+
         #reticle::before, #reticle::after { content: ''; position: absolute; background: #ff8c00; box-shadow: 0 0 10px #ff8c00; }
+
         #reticle::before { top: 30px; left: 0; width: 60px; height: 2px; } 
+
         #reticle::after { top: 0; left: 30px; width: 2px; height: 60px; } 
+
         #reticle.ace-reticle::before, #reticle.ace-reticle::after { background: #ff0000; box-shadow: 0 0 10px #ff0000; }
 
+
+
         .lock-corner { position: absolute; width: 12px; height: 12px; border: 2px solid #ff8c00; pointer-events: none; }
+
         .l-tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+
         .l-tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+
         .l-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+
         .l-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
         .ace-reticle .lock-corner { border-color: #ff0000; }
+
         .test-reticle .lock-corner { border-color: #00ff00; }
+
         .test-reticle::before, .test-reticle::after { background: #00ff00 !important; box-shadow: 0 0 10px #00ff00 !important; border-color: #00ff00; }
+
+
 
         #test-feedback { position: absolute; top: 60%; width: 100%; text-align: center; font-weight: bold; font-size: 1.2rem; color: #00ff00; text-shadow: 0 0 5px #00ff00; pointer-events: none; z-index: 150; opacity: 0; transition: opacity 0.2s; line-height: 1.5; }
 
+
+
         #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
+
         #hud.ace-active { color: #ff0000; text-shadow: 0 0 5px #ff0000; }
+
         #hud.test-active { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
+
         #timer-box { min-width: 140px; text-align: left; }
+
         
+
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
+
         #overlay.ace-active { background: rgba(255,0,0,0.4) !important; }
+
         #overlay.test-active { background: rgba(0,255,0,0.4) !important; }
+
         
+
         #logo { width: 75%; max-width: 450px; margin-bottom: 20px; }
+
         .blink { animation: blink-animation 1.5s steps(2, start) infinite; }
+
         @keyframes blink-animation { to { visibility: hidden; } }
 
+
+
         .sound-notice-box { border: 1px double #ff3300; padding: 15px 25px; margin-bottom: 30px; }
+
         .sound-notice-main { font-size: 1.1rem; color: #ff3300; font-weight: bold; letter-spacing: 2px; display: block; margin-bottom: 6px; }
 
+
+
         .instruction-box { margin-bottom: auto; font-size: 0.85rem; line-height: 1.6; max-width: 90%; }
+
         .instruction-item { margin-bottom: 20px; }
+
         .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; border-left: 3px solid #ff8c00; padding-left: 8px; text-align: left; }
+
         .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
+
+
         #footer-tag { position: absolute; bottom: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; box-sizing: border-box; }
+
         #footer-right { text-align: center; }
 
+
+
         #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; }
+
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
+
         .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+
         .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 10px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; letter-spacing: 2px; pointer-events: auto; }
+
+        .btn-share { border-color: #1DA1F2; color: #1DA1F2; }
+
         .btn-top { border-color: #666; color: #aaa; }
+
         
+
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
+
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
+
+
         /* 横向きかつ画面幅1000px以下のデバイス用の調整（スクロール禁止・縮小版） */
+
         @media screen and (orientation: landscape) and (max-width: 1000px) {
+
             #boot-screen, #result-screen { justify-content: center; padding: 5px 20px; overflow: hidden; }
+
             
+
             #logo { height: 18vh; width: auto; margin-bottom: 5px; }
+
             #status-text { font-size: 1rem; margin-bottom: 8px !important; }
+
             
+
             .sound-notice-box { padding: 5px 15px; margin-bottom: 8px; }
+
             .sound-notice-main { font-size: 0.8rem; margin-bottom: 2px; }
+
             .sound-notice-box span { font-size: 0.65rem; }
+
             
+
             .instruction-box { font-size: 0.75rem; margin-bottom: 0; }
+
             .instruction-item { margin-bottom: 5px; }
+
             .instruction-en { font-size: 0.75rem; border-left-width: 2px; padding-left: 6px; }
+
             .instruction-jp { font-size: 0.6rem; padding-left: 8px; margin-top: 1px; }
+
             
+
             /* フッターの左右分割配置とサイズ縮小 */
+
             #footer-tag { flex-direction: row; justify-content: space-between; align-items: flex-end; padding: 0 20px; bottom: 5px; font-size: 0.6rem; }
+
             #test-mode-btn { font-size: 0.7rem !important; margin-bottom: 0 !important; }
+
             #footer-right { text-align: right; }
 
+
+
             /* リザルト画面の縮小 */
+
             #result-title { font-size: 1.2rem; margin-bottom: 5px; }
+
             #score-details { margin: 10px 0; }
+
             .stat-line { margin: 2px 0; font-size: 0.75rem; }
+
             .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+
             .btn { min-width: 110px; padding: 6px 12px; font-size: 0.75rem; }
+
         }
+
     </style>
+
 </head>
+
 <body>
 
+
+
 <div id="game-frame" class="hidden">
+
     <div id="test-indicator" class="hidden"></div>
+
 </div>
+
 <div id="reticle">
+
     <div class="lock-corner l-tl"></div><div class="lock-corner l-tr"></div>
+
     <div class="lock-corner l-bl"></div><div class="lock-corner l-br"></div>
+
 </div>
+
 <div id="overlay"></div>
+
 <div id="test-feedback"></div>
+
+
 
 <div id="test-mode-label" class="hidden" style="position: absolute; top: 20px; width: 100%; text-align: center; color: #00ff00; font-weight: bold; font-size: 1.5rem; z-index: 120; pointer-events: none; letter-spacing: 4px;">TEST MODE</div>
 
+
+
 <div id="hud" class="hidden">
+
     <div id="hits-box">HITS: <span id="hits">0</span> / 10</div>
+
     <div id="timer-box">TIME: <span id="timer">60.0</span>s</div>
+
 </div>
+
+
 
 <div id="ui-layer">
+
     <div id="boot-screen" class="screen">
+
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[PLEASE TAP]</div>
+
+        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
+
         <div class="sound-notice-box">
+
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
-            <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵する<br>音響索敵型シューティングゲームです。<br>
+
+            <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。<br>
+
                 イヤホン・ヘッドホンの使用を強く推奨します。</span>
+
         </div>
+
         <div class="instruction-box">
+
             <div class="instruction-item">
+
                 <span class="instruction-en">01. SEARCH</span>
+
                 <span class="instruction-jp">耳を澄まして敵の位置を探れ。</span>
+
             </div>
+
             <div class="instruction-item">
+
                 <span class="instruction-en">02. ATTACK</span>
+
                 <span class="instruction-jp">画面をタップしてミサイルを発射。</span>
+
             </div>
+
         </div>
+
         <div id="footer-tag">
+
             <div id="footer-left">
+
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
+
             </div>
+
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.8</span>
+
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.7</span>
+
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
+
                 <span style="color: #444;">Voice By ondoku3.com</span>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <div id="result-screen" class="screen hidden">
+
         <h1 id="result-title" style="letter-spacing: 5px; font-size: 1.8rem;">MISSION COMPLETE</h1>
+
         <div id="score-details" style="margin: 20px 0;"></div>
+
         <div class="btn-container">
+
+            <a href="#" id="share-btn" class="btn btn-share" target="_blank">SHARE ON X</a>
+
             <div id="retry-btn" class="btn">RETRY</div>
+
             <div id="ace-btn" class="btn btn-ace hidden">ACE MODE</div>
+
             <div id="top-btn" class="btn btn-top">RETURN TO TOP</div>
+
         </div>
+
     </div>
+
 </div>
 
+
+
 <script>
+
     let audioCtx;
+
     const soundBuffers = {};
-    let gameState = 'BOOT_WAIT';
+
+    let gameState = 'BOOT';
+
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
+
     let totalPrecisionBonus = 0;
+
     
+
     let enemyAngle = 0, targetAngle = 0;
+
     let enemySource, enemyPanner, enemyGain; 
+
     let mainSource, mainPanner;   
 
+
+
     let currentMode = 'NORMAL'; 
+
     let aceUnlocked = false; 
+
     let baseSpeed = 0.015, wobbleAmp = 0.02, wobbleFreq = 0.001, currentEnemySpeed = 0.015;
 
+
+
     const testSequence = [0.0, -0.2, 0.2, -0.4, 0.4, -0.6, 0.6, -0.8, 0.8, -1.0, 1.0];
+
     let testStep = 0;
+
     let isWaitingToReturn = false;
+
     let returnTimer = null;
+
     let perfectCombo = 0;
 
+
+
     const comboTexts = [
+
         "",
+
         "> PERFECT <",
+
         "> EXCELLENT <",
+
         "> GENIUS <",
+
         "> NEW TYPE <",
+
         "> NANDATO !? <",
+
         "> SOKOKA !! <",
+
         "> YARUNA !! <",
+
         "> KONO KURAI !! <",
+
         "> NIGASU KAYO !! <",
+
         "> Nu GUNDAM WA, DATE JA NAI !! <",
+
         "> THANK YOU FOR PLAYING !! <"
+
     ];
 
+
+
     const soundList = {
+
         menu_select: 'sounds/menu_select.mp3',
+
         missile: 'sounds/missile.mp3',
+
         enemy_engine: 'sounds/enemy_engine.mp3', 
+
         enemy_main: 'sounds/enemy_main.mp3',     
+
         hit_feedback: 'sounds/hit_feedback.mp3',
+
         break_feedback: 'sounds/break_feedback.mp3',
+
         vo_0_9999: 'sounds/vo_0_9999.mp3',
+
         vo_10000_14999: 'sounds/vo_10000_14999.mp3',
+
         vo_15000_17999: 'sounds/vo_15000_17999.mp3',
+
         vo_18000_19999: 'sounds/vo_18000_19999.mp3',
+
         vo_20000_over: 'sounds/vo_20000_over.mp3'
+
     };
 
-    async function initializeSystem() {
-        if (gameState !== 'BOOT_WAIT') return;
-        gameState = 'BOOT_INITIALIZING';
-        document.getElementById('status-text').innerText = '[LOADING...]';
 
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-        // iOSスロットリング回避のため直列処理（1つずつデコード）
-        for (const [name, url] of Object.entries(soundList)) {
-            try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) { console.warn(name + " load failed"); }
-        }
-
-        gameState = 'BOOT_READY';
-        document.getElementById('status-text').innerText = '[TAP TO START]';
-    }
 
     async function initGame(mode) {
-        if (gameState !== 'BOOT_READY' && mode !== 'RETRY' && mode !== 'ACE' && mode !== 'TEST') return;
-        currentMode = (mode === 'RETRY') ? currentMode : mode;
-        
+
+        currentMode = mode;
+
         const gf = document.getElementById('game-frame');
+
         const ret = document.getElementById('reticle');
+
         const hud = document.getElementById('hud');
+
         const ovl = document.getElementById('overlay');
+
         const tl = document.getElementById('test-mode-label');
+
         const hb = document.getElementById('hits-box');
+
         const testInd = document.getElementById('test-indicator');
 
+
+
         gf.className = ''; ret.className = ''; hud.className = ''; ovl.className = '';
+
         tl.classList.add('hidden'); hb.classList.remove('hidden'); testInd.classList.add('hidden');
 
+
+
         if (currentMode === 'ACE') {
+
             baseSpeed = 0.035;   
+
             wobbleAmp = 0.08;    
+
             wobbleFreq = 0.003;  
+
             gf.classList.add('ace-active');
+
             ret.classList.add('ace-reticle');
+
             hud.classList.add('ace-active');
+
             ovl.classList.add('ace-active');
+
         } else if (currentMode === 'TEST') {
+
             gf.classList.add('test-active');
+
             ret.classList.add('test-reticle');
+
             hud.classList.add('test-active');
+
             ovl.classList.add('test-active');
+
             tl.classList.remove('hidden');
+
             hb.classList.add('hidden');
+
             testInd.classList.remove('hidden'); 
+
         } else {
+
             baseSpeed = 0.015;
+
             wobbleAmp = 0.02;
+
             wobbleFreq = 0.001;
+
         }
 
-        if (audioCtx && audioCtx.state === 'suspended') {
-            await audioCtx.resume();
+
+
+        if (audioCtx) {
+
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            startGame();
+
+            return;
+
         }
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        for (const [name, url] of Object.entries(soundList)) {
+
+            try {
+
+                const response = await fetch(url);
+
+                const arrayBuffer = await response.arrayBuffer();
+
+                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+
+            } catch (e) { console.warn(name + " load failed"); }
+
+        }
+
         startGame();
+
     }
+
+
 
     function startGame() {
+
         gameState = 'GAME';
+
         hits = 0; shotsFired = 0; timeLeft = 60.0; testStep = 0; totalPrecisionBonus = 0;
+
         perfectCombo = 0;
+
         currentEnemySpeed = baseSpeed;
+
         isWaitingToReturn = false;
+
         document.getElementById('test-feedback').style.opacity = '0';
+
         
+
         document.getElementById('boot-screen').classList.add('hidden');
+
         document.getElementById('result-screen').classList.add('hidden');
+
         document.getElementById('game-frame').classList.remove('hidden');
+
         document.getElementById('hud').classList.remove('hidden');
+
         document.getElementById('hits').innerText = hits;
+
         document.getElementById('timer').innerText = timeLeft.toFixed(1);
+
         
+
         if (soundBuffers['enemy_engine']) {
+
             enemySource = audioCtx.createBufferSource();
+
             enemySource.buffer = soundBuffers['enemy_engine'];
+
             enemySource.loop = true;
+
             enemyPanner = audioCtx.createStereoPanner();
+
             enemyGain = audioCtx.createGain();
+
             enemyGain.gain.value = 1.0;
+
             enemySource.connect(enemyPanner).connect(enemyGain).connect(audioCtx.destination);
+
             enemySource.start();
+
         }
+
+
 
         if (soundBuffers['enemy_main']) {
+
             mainSource = audioCtx.createBufferSource();
+
             mainSource.buffer = soundBuffers['enemy_main'];
+
             mainSource.loop = true;
+
             mainPanner = audioCtx.createStereoPanner();
+
             const mainGain = audioCtx.createGain();
+
             mainGain.gain.value = 4.0; 
+
             mainSource.connect(mainPanner).connect(mainGain).connect(audioCtx.destination);
+
             mainSource.start();
+
         }
+
+
 
         timerInterval = setInterval(() => {
+
             timeLeft -= 0.1;
+
             if (timeLeft <= 0) { 
+
                 timeLeft = 0; 
+
                 if (currentMode === 'TEST') returnToBoot();
+
                 else endGame(); 
+
             }
+
             else { document.getElementById('timer').innerText = timeLeft.toFixed(1); }
+
         }, 100);
+
         requestAnimationFrame(update);
+
     }
+
+
 
     function update() {
+
         if (gameState !== 'GAME') return;
+
         if (currentMode === 'TEST') {
+
             if (enemyPanner && mainPanner && enemyGain) {
+
                 const currentTestPan = testSequence[testStep];
+
                 mainPanner.pan.value = currentTestPan;
+
                 enemyPanner.pan.value = currentTestPan * 1.0;
+
                 enemyGain.gain.value = 0.5 + (Math.abs(currentTestPan) * 0.5);
+
                 const percent = (currentTestPan + 1) / 2 * 100;
+
                 document.getElementById('test-indicator').style.left = percent + '%';
+
             }
+
         } else {
+
             if (!isLocked) {
+
                 let diff = targetAngle - enemyAngle;
+
                 enemyAngle += diff * currentEnemySpeed;
+
                 targetAngle += Math.sin(Date.now() * wobbleFreq) * wobbleAmp;
+
                 if (currentEnemySpeed > baseSpeed) currentEnemySpeed *= 0.96;
+
             }
+
             if (enemyPanner && mainPanner && enemyGain) {
+
                 const sinVal = Math.sin(enemyAngle);
+
                 mainPanner.pan.value = Math.max(-1, Math.min(1, sinVal * 1.0));
+
                 enemyPanner.pan.value = Math.max(-1, Math.min(1, sinVal * 1.0));
+
                 enemyGain.gain.value = 0.5 + (Math.abs(sinVal) * 0.5);
+
             }
+
         }
+
         requestAnimationFrame(update);
+
     }
+
+
 
     function shoot(e) {
+
         if (gameState !== 'GAME' || !canShoot) return;
+
         canShoot = false; isLocked = true; shotsFired++;
+
         
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+
         const ret = document.getElementById('reticle');
+
         ret.style.left = clientX + 'px'; ret.style.top = '50%'; ret.style.opacity = '1';
+
         setTimeout(() => { if(gameState === 'GAME') ret.style.opacity = '0'; }, 1000);
+
         document.getElementById('game-frame').classList.add('reloading');
 
+
+
         playOneShot('missile', 0, 0.6);
+
         const x = (clientX / window.innerWidth) * 2 - 1;
+
         const enemyXAtShoot = currentMode === 'TEST' ? testSequence[testStep] : Math.max(-1, Math.min(1, Math.sin(enemyAngle) * 1.0));
+
         
+
         setTimeout(() => {
+
             if (gameState !== 'GAME') return;
+
             const diff = Math.abs(x - enemyXAtShoot);
+
             if (diff < 0.25) {
+
                 playOneShot('hit_feedback', enemyXAtShoot);
+
                 flash();
+
                 
+
                 if (currentMode === 'TEST') {
+
                     const testPrecision = Math.floor(300 * (1 - diff / 0.25));
+
                     const rawDiff = enemyXAtShoot - x;
+
                     const displayDiff = Math.floor(Math.abs(rawDiff) * 100);
+
                     let errText = '';
 
-                    // コンボ判定閾値を10に緩和
-                    if (displayDiff <= 10) {
+
+
+                    if (displayDiff <= 3) {
+
                         perfectCombo++;
+
                         let comboIndex = perfectCombo;
+
                         if (comboIndex >= comboTexts.length) comboIndex = comboTexts.length - 1;
+
                         errText = comboTexts[comboIndex];
+
                     } else {
+
                         perfectCombo = 0;
+
                         if (rawDiff < 0) {
+
                             errText = `<<< ${displayDiff} TGT`;
+
                         } else {
+
                             errText = `TGT ${displayDiff} >>>`;
+
                         }
+
                     }
+
+
 
                     const tf = document.getElementById('test-feedback');
+
                     tf.innerHTML = `PRECISION: +${testPrecision}<br>${errText}`;
+
                     tf.style.opacity = '1';
 
+
+
                     testStep++;
+
                     if (testStep >= testSequence.length) {
+
                         isWaitingToReturn = true;
+
                         setTimeout(() => { playOneShot('break_feedback'); }, 500);
+
                         returnTimer = setTimeout(() => {
+
                             if (isWaitingToReturn) returnToBoot();
+
                         }, 3000);
+
                     } else {
+
                         setTimeout(() => { tf.style.opacity = '0'; }, 1500);
+
                     }
+
                 } else {
+
                     hits++;
+
                     totalPrecisionBonus += Math.floor(300 * (1 - diff / 0.25));
+
                     document.getElementById('hits').innerText = hits;
+
                     targetAngle = enemyAngle + (Math.random() > 0.5 ? 1 : -1) * (Math.PI * 0.8);
+
                     currentEnemySpeed = 0.2; 
+
                     if (hits >= 10) setTimeout(() => { playOneShot('break_feedback'); endGame(); }, 500);
+
                 }
+
             }
+
             isLocked = false; 
+
         }, 1000);
+
         setTimeout(() => { canShoot = true; document.getElementById('game-frame').classList.remove('reloading'); }, 1000);
+
     }
+
+
 
     function playOneShot(name, pan = 0, volume = 0.5) {
+
         if (!soundBuffers[name]) return;
+
         const s = audioCtx.createBufferSource();
+
         const p = audioCtx.createStereoPanner();
+
         const g = audioCtx.createGain();
+
         s.buffer = soundBuffers[name];
+
         p.pan.value = Math.max(-1, Math.min(1, pan));
+
         g.gain.value = volume;
+
         s.connect(p).connect(g).connect(audioCtx.destination);
+
         s.start();
+
     }
+
+
 
     function returnToBoot() {
-        gameState = 'BOOT_READY';
+
+        gameState = 'BOOT';
+
         isWaitingToReturn = false;
+
         clearInterval(timerInterval);
+
         if (returnTimer) clearTimeout(returnTimer);
+
         if (enemySource) { enemySource.stop(); enemySource = null; }
+
         if (mainSource) { mainSource.stop(); mainSource = null; }
+
         document.getElementById('reticle').style.opacity = '0';
+
         document.getElementById('test-feedback').style.opacity = '0';
+
         document.getElementById('game-frame').classList.add('hidden');
+
         document.getElementById('hud').classList.add('hidden');
+
         document.getElementById('test-mode-label').classList.add('hidden');
+
         document.getElementById('test-indicator').classList.add('hidden');
+
         document.getElementById('result-screen').classList.add('hidden');
+
         document.getElementById('boot-screen').classList.remove('hidden');
-        document.getElementById('status-text').innerText = '[TAP TO START]';
+
     }
+
+
 
     function endGame() {
-        if (gameState === 'RESULT') return; 
-        gameState = 'RESULT'; 
-        clearInterval(timerInterval);
+
+    // 追加：既にリザルト処理が開始されている場合は中断
+
+    if (gameState === 'RESULT') return; 
+
+    gameState = 'RESULT'; 
+
+    clearInterval(timerInterval);
+
         if (enemySource) { enemySource.stop(); enemySource = null; }
+
         if (mainSource) { mainSource.stop(); mainSource = null; }
+
         document.getElementById('reticle').style.opacity = '0';
+
         document.getElementById('game-frame').classList.add('hidden');
 
+
+
         const isCleared = hits >= 10;
+
         const resultTitle = document.getElementById('result-title');
+
         
+
         if (isCleared) {
+
             resultTitle.innerText = 'MISSION COMPLETE';
+
             resultTitle.style.color = currentMode === 'ACE' ? '#ff0000' : '#ff8c00';
+
         } else {
+
             resultTitle.innerText = 'MISSION FAILED';
+
             resultTitle.style.color = '#aa0000';
+
         }
+
+
 
         const accuracy = shotsFired > 0 ? (hits / shotsFired) : 0;
+
         const timeBonus = Math.floor(timeLeft * 100);
+
         const accBonus = Math.floor(accuracy * 5000);
+
         const total = (hits * 1000) + timeBonus + accBonus + totalPrecisionBonus;
 
+
+
         if (total >= 18000) aceUnlocked = true;
+
         if (aceUnlocked) document.getElementById('ace-btn').classList.remove('hidden');
 
+
+
         let voiceKey = '';
+
         if (total < 10000) voiceKey = 'vo_0_9999';
+
         else if (total < 15000) voiceKey = 'vo_10000_14999';
+
         else if (total < 18000) voiceKey = 'vo_15000_17999';
+
         else if (total < 20000) voiceKey = 'vo_18000_19999';
+
         else voiceKey = 'vo_20000_over';
+
         playOneShot(voiceKey, 0, 1.0);
 
+
+
         document.getElementById('hud').classList.add('hidden');
+
         document.getElementById('result-screen').classList.remove('hidden');
+
         
+
         const scoreColor = currentMode === 'ACE' ? '#ff0000' : '#ff8c00';
+
         document.getElementById('score-details').innerHTML = `
+
             <div class="stat-line">BASE HITS (${hits}): ${hits * 1000}</div>
+
             <div class="stat-line">TIME BONUS (${timeLeft.toFixed(1)}s): +${timeBonus}</div>
+
             <div class="stat-line">ACCURACY BONUS (${(accuracy*100).toFixed(1)}%): +${accBonus}</div>
+
             <div class="stat-line">PRECISION BONUS: +${totalPrecisionBonus}</div>
+
             <h2 style="color:${scoreColor}; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
+
         `;
+
+        
+
+        const modeSuffix = currentMode === 'ACE' ? ' (ACE MODE)' : '';
+
+        const shareText = `TOTAL SCORE: ${total}${modeSuffix} #ASSAULTOFSOUNDS`;
+
+        const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`;
+
+        document.getElementById('share-btn').onclick = (e) => { e.preventDefault(); window.open(shareUrl, '_blank'); };
+
     }
+
+
 
     function flash() { 
+
         const o = document.getElementById('overlay'); 
+
         o.style.opacity = 1; 
+
         setTimeout(() => o.style.opacity = 0, 100); 
+
     }
 
+
+
     const handleAction = (e) => {
+
         if (isWaitingToReturn) {
+
             e.preventDefault();
+
             returnToBoot();
+
             return;
+
         }
-        if (gameState === 'BOOT_WAIT') {
-            if (e.type === 'touchstart') e.preventDefault();
-            initializeSystem();
-        } else if (gameState === 'BOOT_READY') {
-            if (e.type === 'touchstart') e.preventDefault();
-            initGame('NORMAL');
-        } else if (gameState === 'GAME') { 
-            if (e.type === 'touchstart') e.preventDefault(); 
-            shoot(e); 
-        }
+
+        if (gameState === 'BOOT') initGame('NORMAL');
+
+        else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
+
     };
+
     window.addEventListener('touchstart', handleAction, {passive:false});
+
     window.addEventListener('mousedown', handleAction);
 
-    document.getElementById('retry-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('RETRY'); });
+
+
+    document.getElementById('retry-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame(currentMode); });
+
     document.getElementById('top-btn').addEventListener('click', (e) => { e.stopPropagation(); returnToBoot(); });
+
     document.getElementById('ace-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('ACE'); });
+
     
+
     const testBtn = document.getElementById('test-mode-btn');
-    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); });
-    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); }, {passive: false});
+
+    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); });
+
+    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); }, {passive: false});
+
     
+
     const authorLink = document.getElementById('author-link');
+
     authorLink.addEventListener('mousedown', (e) => { e.stopPropagation(); });
+
     authorLink.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: false});
+
 </script>
+
 </body>
+
 </html>
