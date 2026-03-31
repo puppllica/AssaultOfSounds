@@ -103,19 +103,6 @@
         
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
-        /* 横向きかつ画面幅1000px以下のデバイス用の調整 */
-        @media screen and (orientation: landscape) and (max-width: 1000px) {
-            #logo { height: 35vh; width: auto; margin-bottom: 10px; }
-            #status-text { margin-bottom: 10px !important; }
-            .sound-notice-box { padding: 10px; margin-bottom: 15px; }
-            
-            .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
-            .btn { min-width: 130px; padding: 8px 15px; font-size: 0.9rem; }
-            .stat-line { margin: 2px 8px; font-size: 0.85rem; display: inline-block; }
-            #result-title { font-size: 1.4rem; margin-bottom: 5px; }
-            #result-screen { justify-content: flex-start; padding-top: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        }
     </style>
 </head>
 <body>
@@ -138,14 +125,7 @@
 </div>
 
 <div id="ui-layer">
-    <div id="loading-screen" class="screen">
-        <div style="letter-spacing: 4px; margin-bottom: 20px;">INITIALIZING SYSTEM...</div>
-        <div style="width: 75%; max-width: 300px; height: 4px; background: #331100; border: 1px solid #ff8c00;">
-            <div id="loading-bar" style="width: 0%; height: 100%; background: #ff8c00; transition: width 0.2s;"></div>
-        </div>
-    </div>
-
-    <div id="boot-screen" class="screen hidden">
+    <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
         <div class="sound-notice-box">
@@ -165,7 +145,7 @@
         </div>
         <div id="footer-tag">
             <div id="test-mode-btn" style="color: #00ff00; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
-            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.4</span>
+            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.1</span>
             Created by <a id="author-link" href="https://x.com/asao_kridanik" target="_blank" style="color: #444; text-decoration: underline; pointer-events: auto;">AsaoKridanik</a><br>
             <span style="color: #444;">Voice By ondoku3.com</span>
         </div>
@@ -186,8 +166,7 @@
 <script>
     let audioCtx;
     const soundBuffers = {};
-    const preloadedBuffers = {};
-    let gameState = 'LOADING';
+    let gameState = 'BOOT';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
     let totalPrecisionBonus = 0;
     
@@ -204,7 +183,6 @@
     let isWaitingToReturn = false;
     let returnTimer = null;
     let perfectCombo = 0;
-    let isStarting = false;
 
     const comboTexts = [
         "",
@@ -235,29 +213,7 @@
         vo_20000_over: 'sounds/vo_20000_over.mp3'
     };
 
-    async function preloadAssets() {
-        const total = Object.keys(soundList).length;
-        let loaded = 0;
-        for (const [name, url] of Object.entries(soundList)) {
-            try {
-                const response = await fetch(url);
-                preloadedBuffers[name] = await response.arrayBuffer();
-            } catch (e) { console.warn(name + " load failed"); }
-            loaded++;
-            document.getElementById('loading-bar').style.width = (loaded / total * 100) + '%';
-        }
-        setTimeout(() => {
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('boot-screen').classList.remove('hidden');
-            gameState = 'BOOT';
-        }, 500);
-    }
-    window.onload = preloadAssets;
-
     async function initGame(mode) {
-        if (isStarting) return;
-        isStarting = true;
-
         currentMode = mode;
         const gf = document.getElementById('game-frame');
         const ret = document.getElementById('reticle');
@@ -292,28 +248,24 @@
             wobbleFreq = 0.001;
         }
 
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx) {
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-            
-            const decodePromises = Object.entries(preloadedBuffers).map(async ([name, buffer]) => {
-                try {
-                    soundBuffers[name] = await audioCtx.decodeAudioData(buffer.slice(0));
-                } catch(e) { console.warn(name + " decode failed"); }
-            });
-            await Promise.all(decodePromises);
-        } else if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
+            startGame();
+            return;
         }
-        
-        isStarting = false;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        for (const [name, url] of Object.entries(soundList)) {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) { console.warn(name + " load failed"); }
+        }
         startGame();
     }
 
     function startGame() {
         gameState = 'GAME';
-        if (timerInterval) clearInterval(timerInterval);
-        
         hits = 0; shotsFired = 0; timeLeft = 60.0; testStep = 0; totalPrecisionBonus = 0;
         perfectCombo = 0;
         currentEnemySpeed = baseSpeed;
@@ -488,9 +440,10 @@
     }
 
     function endGame() {
-        if (gameState === 'RESULT') return; 
-        gameState = 'RESULT'; 
-        clearInterval(timerInterval);
+    // 追加：既にリザルト処理が開始されている場合は中断
+    if (gameState === 'RESULT') return; 
+    gameState = 'RESULT'; 
+    clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
@@ -548,14 +501,13 @@
     }
 
     const handleAction = (e) => {
-        if (e.type === 'touchstart' && e.cancelable) e.preventDefault();
-        
         if (isWaitingToReturn) {
+            e.preventDefault();
             returnToBoot();
             return;
         }
         if (gameState === 'BOOT') initGame('NORMAL');
-        else if (gameState === 'GAME') shoot(e);
+        else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
     };
     window.addEventListener('touchstart', handleAction, {passive:false});
     window.addEventListener('mousedown', handleAction);
