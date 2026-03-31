@@ -105,26 +105,33 @@
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* 横向きかつ画面幅1000px以下のデバイス用の調整 */
+        /* 横向きかつ画面幅1000px以下のデバイス用の調整（スクロール禁止・縮小版） */
         @media screen and (orientation: landscape) and (max-width: 1000px) {
-            #logo { height: 35vh; width: auto; margin-bottom: 10px; }
-            #status-text { margin-bottom: 10px !important; }
-            .sound-notice-box { padding: 10px; margin-bottom: 15px; }
+            #boot-screen, #result-screen { justify-content: center; padding: 5px 20px; overflow: hidden; }
             
-            #boot-screen { justify-content: flex-start; padding-top: 20px; padding-bottom: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            #logo { height: 18vh; width: auto; margin-bottom: 5px; }
+            #status-text { font-size: 1rem; margin-bottom: 8px !important; }
             
-            /* フッターの左右分割配置 */
-            #footer-tag { flex-direction: row; justify-content: space-between; align-items: flex-end; padding: 0 20px; bottom: 10px; }
+            .sound-notice-box { padding: 5px 15px; margin-bottom: 8px; }
+            .sound-notice-main { font-size: 0.8rem; margin-bottom: 2px; }
+            .sound-notice-box span { font-size: 0.65rem; }
+            
+            .instruction-box { font-size: 0.75rem; margin-bottom: 0; }
+            .instruction-item { margin-bottom: 5px; }
+            .instruction-en { font-size: 0.75rem; border-left-width: 2px; padding-left: 6px; }
+            .instruction-jp { font-size: 0.6rem; padding-left: 8px; margin-top: 1px; }
+            
+            /* フッターの左右分割配置とサイズ縮小 */
+            #footer-tag { flex-direction: row; justify-content: space-between; align-items: flex-end; padding: 0 20px; bottom: 5px; font-size: 0.6rem; }
+            #test-mode-btn { font-size: 0.7rem !important; margin-bottom: 0 !important; }
             #footer-right { text-align: right; }
 
-            .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
-            .btn { min-width: 130px; padding: 8px 15px; font-size: 0.9rem; }
-            
-            /* スコア内訳は縦並びを維持 */
-            .stat-line { margin: 2px 0; font-size: 0.85rem; }
-            
-            #result-title { font-size: 1.4rem; margin-bottom: 5px; }
-            #result-screen { justify-content: flex-start; padding-top: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            /* リザルト画面の縮小 */
+            #result-title { font-size: 1.2rem; margin-bottom: 5px; }
+            #score-details { margin: 10px 0; }
+            .stat-line { margin: 2px 0; font-size: 0.75rem; }
+            .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+            .btn { min-width: 110px; padding: 6px 12px; font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -150,7 +157,7 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
+        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[PLEASE TAP]</div>
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
             <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。<br>
@@ -171,7 +178,7 @@
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
             </div>
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.6</span>
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.8</span>
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
                 <span style="color: #444;">Voice By ondoku3.com</span>
             </div>
@@ -193,7 +200,7 @@
 <script>
     let audioCtx;
     const soundBuffers = {};
-    let gameState = 'BOOT';
+    let gameState = 'BOOT_WAIT';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
     let totalPrecisionBonus = 0;
     
@@ -240,6 +247,28 @@
         vo_20000_over: 'sounds/vo_20000_over.mp3'
     };
 
+    async function initializeSystem() {
+        if (gameState !== 'BOOT_WAIT') return;
+        gameState = 'BOOT_INITIALIZING';
+        document.getElementById('status-text').innerText = '[INITIALIZING SYSTEM...]';
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+        const loadPromises = Object.entries(soundList).map(async ([name, url]) => {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) { console.warn(name + " load failed"); }
+        });
+
+        await Promise.all(loadPromises);
+
+        gameState = 'BOOT_READY';
+        document.getElementById('status-text').innerText = '[TAP TO START]';
+    }
+
     async function initGame(mode) {
         currentMode = mode;
         const gf = document.getElementById('game-frame');
@@ -275,18 +304,8 @@
             wobbleFreq = 0.001;
         }
 
-        if (audioCtx) {
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
-            startGame();
-            return;
-        }
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        for (const [name, url] of Object.entries(soundList)) {
-            try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) { console.warn(name + " load failed"); }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            await audioCtx.resume();
         }
         startGame();
     }
@@ -450,7 +469,7 @@
     }
 
     function returnToBoot() {
-        gameState = 'BOOT';
+        gameState = 'BOOT_READY';
         isWaitingToReturn = false;
         clearInterval(timerInterval);
         if (returnTimer) clearTimeout(returnTimer);
@@ -464,6 +483,7 @@
         document.getElementById('test-indicator').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('boot-screen').classList.remove('hidden');
+        document.getElementById('status-text').innerText = '[TAP TO START]';
     }
 
     function endGame() {
@@ -533,8 +553,16 @@
             returnToBoot();
             return;
         }
-        if (gameState === 'BOOT') initGame('NORMAL');
-        else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
+        if (gameState === 'BOOT_WAIT') {
+            if (e.type === 'touchstart') e.preventDefault();
+            initializeSystem();
+        } else if (gameState === 'BOOT_READY') {
+            if (e.type === 'touchstart') e.preventDefault();
+            initGame('NORMAL');
+        } else if (gameState === 'GAME') { 
+            if (e.type === 'touchstart') e.preventDefault(); 
+            shoot(e); 
+        }
     };
     window.addEventListener('touchstart', handleAction, {passive:false});
     window.addEventListener('mousedown', handleAction);
@@ -544,8 +572,8 @@
     document.getElementById('ace-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('ACE'); });
     
     const testBtn = document.getElementById('test-mode-btn');
-    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); });
-    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); }, {passive: false});
+    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); });
+    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); }, {passive: false});
     
     const authorLink = document.getElementById('author-link');
     authorLink.addEventListener('mousedown', (e) => { e.stopPropagation(); });
