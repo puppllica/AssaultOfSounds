@@ -94,7 +94,7 @@
 
         #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; }
 
-        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
         .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 10px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; letter-spacing: 2px; pointer-events: auto; }
@@ -104,36 +104,17 @@
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* 横向きかつ画面高が低いデバイス用の調整 */
-        @media screen and (orientation: landscape) and (max-width: 950px) {
-            .btn-container {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-                margin-top: 10px;
-            }
-            .btn {
-                min-width: 130px;
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-            .stat-line {
-                margin: 2px 8px;
-                font-size: 0.85rem;
-                display: inline-block;
-            }
-            #result-title {
-                font-size: 1.4rem;
-                margin-bottom: 5px;
-            }
-            #result-screen {
-                justify-content: flex-start;
-                padding-top: 10px;
-            }
-            #score-details {
-                margin: 10px 0;
-            }
+        /* 横向きかつ画面幅1000px以下のデバイス用の調整 */
+        @media screen and (orientation: landscape) and (max-width: 1000px) {
+            #logo { height: 35vh; width: auto; margin-bottom: 10px; }
+            #status-text { margin-bottom: 10px !important; }
+            .sound-notice-box { padding: 10px; margin-bottom: 15px; }
+            
+            .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+            .btn { min-width: 130px; padding: 8px 15px; font-size: 0.9rem; }
+            .stat-line { margin: 2px 8px; font-size: 0.85rem; display: inline-block; }
+            #result-title { font-size: 1.4rem; margin-bottom: 5px; }
+            #result-screen { justify-content: flex-start; padding-top: 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         }
     </style>
 </head>
@@ -184,7 +165,7 @@
         </div>
         <div id="footer-tag">
             <div id="test-mode-btn" style="color: #00ff00; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
-            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.2</span>
+            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.3</span>
             Created by <a id="author-link" href="https://x.com/asao_kridanik" target="_blank" style="color: #444; text-decoration: underline; pointer-events: auto;">AsaoKridanik</a><br>
             <span style="color: #444;">Voice By ondoku3.com</span>
         </div>
@@ -316,6 +297,8 @@
                     soundBuffers[name] = await audioCtx.decodeAudioData(buffer.slice(0));
                 } catch(e) { console.warn(name + " decode failed"); }
             }
+        } else if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
         }
         startGame();
     }
@@ -496,7 +479,8 @@
     }
 
     function endGame() {
-        gameState = 'RESULT';
+        if (gameState === 'RESULT') return; 
+        gameState = 'RESULT'; 
         clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
