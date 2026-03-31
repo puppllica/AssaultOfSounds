@@ -178,7 +178,7 @@
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
             </div>
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.8</span>
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.9</span>
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
                 <span style="color: #444;">Voice By ondoku3.com</span>
             </div>
@@ -250,20 +250,18 @@
     async function initializeSystem() {
         if (gameState !== 'BOOT_WAIT') return;
         gameState = 'BOOT_INITIALIZING';
-        document.getElementById('status-text').innerText = '[INITIALIZING SYSTEM...]';
+        document.getElementById('status-text').innerText = '[LOADING...]';
 
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-        const loadPromises = Object.entries(soundList).map(async ([name, url]) => {
+        for (const [name, url] of Object.entries(soundList)) {
             try {
                 const response = await fetch(url);
                 const arrayBuffer = await response.arrayBuffer();
                 soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
             } catch (e) { console.warn(name + " load failed"); }
-        });
-
-        await Promise.all(loadPromises);
+        }
 
         gameState = 'BOOT_READY';
         document.getElementById('status-text').innerText = '[TAP TO START]';
@@ -487,10 +485,10 @@
     }
 
     function endGame() {
-    // 追加：既にリザルト処理が開始されている場合は中断
-    if (gameState === 'RESULT') return; 
-    gameState = 'RESULT'; 
-    clearInterval(timerInterval);
+        // 追加：既にリザルト処理が開始されている場合は中断
+        if (gameState === 'RESULT') return; 
+        gameState = 'RESULT'; 
+        clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
