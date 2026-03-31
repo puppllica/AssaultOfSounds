@@ -157,7 +157,7 @@
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
         <img id="logo" src="img/brandlogo.png" alt="ASSAULT OF SOUNDS">
-        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[PLEASE TAP]</div>
+        <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
             <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。<br>
@@ -178,7 +178,7 @@
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
             </div>
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.9</span>
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.7</span>
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
                 <span style="color: #444;">Voice By ondoku3.com</span>
             </div>
@@ -200,7 +200,7 @@
 <script>
     let audioCtx;
     const soundBuffers = {};
-    let gameState = 'BOOT_WAIT';
+    let gameState = 'BOOT';
     let hits = 0, shotsFired = 0, timeLeft = 60.0, timerInterval, canShoot = true, isLocked = false;
     let totalPrecisionBonus = 0;
     
@@ -247,26 +247,6 @@
         vo_20000_over: 'sounds/vo_20000_over.mp3'
     };
 
-    async function initializeSystem() {
-        if (gameState !== 'BOOT_WAIT') return;
-        gameState = 'BOOT_INITIALIZING';
-        document.getElementById('status-text').innerText = '[LOADING...]';
-
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-        for (const [name, url] of Object.entries(soundList)) {
-            try {
-                const response = await fetch(url);
-                const arrayBuffer = await response.arrayBuffer();
-                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) { console.warn(name + " load failed"); }
-        }
-
-        gameState = 'BOOT_READY';
-        document.getElementById('status-text').innerText = '[TAP TO START]';
-    }
-
     async function initGame(mode) {
         currentMode = mode;
         const gf = document.getElementById('game-frame');
@@ -302,8 +282,18 @@
             wobbleFreq = 0.001;
         }
 
-        if (audioCtx && audioCtx.state === 'suspended') {
-            await audioCtx.resume();
+        if (audioCtx) {
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            startGame();
+            return;
+        }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        for (const [name, url] of Object.entries(soundList)) {
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                soundBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) { console.warn(name + " load failed"); }
         }
         startGame();
     }
@@ -467,7 +457,7 @@
     }
 
     function returnToBoot() {
-        gameState = 'BOOT_READY';
+        gameState = 'BOOT';
         isWaitingToReturn = false;
         clearInterval(timerInterval);
         if (returnTimer) clearTimeout(returnTimer);
@@ -481,14 +471,13 @@
         document.getElementById('test-indicator').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('boot-screen').classList.remove('hidden');
-        document.getElementById('status-text').innerText = '[TAP TO START]';
     }
 
     function endGame() {
-        // 追加：既にリザルト処理が開始されている場合は中断
-        if (gameState === 'RESULT') return; 
-        gameState = 'RESULT'; 
-        clearInterval(timerInterval);
+    // 追加：既にリザルト処理が開始されている場合は中断
+    if (gameState === 'RESULT') return; 
+    gameState = 'RESULT'; 
+    clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
@@ -551,16 +540,8 @@
             returnToBoot();
             return;
         }
-        if (gameState === 'BOOT_WAIT') {
-            if (e.type === 'touchstart') e.preventDefault();
-            initializeSystem();
-        } else if (gameState === 'BOOT_READY') {
-            if (e.type === 'touchstart') e.preventDefault();
-            initGame('NORMAL');
-        } else if (gameState === 'GAME') { 
-            if (e.type === 'touchstart') e.preventDefault(); 
-            shoot(e); 
-        }
+        if (gameState === 'BOOT') initGame('NORMAL');
+        else if (gameState === 'GAME') { if (e.type === 'touchstart') e.preventDefault(); shoot(e); }
     };
     window.addEventListener('touchstart', handleAction, {passive:false});
     window.addEventListener('mousedown', handleAction);
@@ -570,8 +551,8 @@
     document.getElementById('ace-btn').addEventListener('click', (e) => { e.stopPropagation(); initGame('ACE'); });
     
     const testBtn = document.getElementById('test-mode-btn');
-    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); });
-    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT_READY') initGame('TEST'); }, {passive: false});
+    testBtn.addEventListener('mousedown', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); });
+    testBtn.addEventListener('touchstart', (e) => { e.stopPropagation(); if(gameState === 'BOOT') initGame('TEST'); }, {passive: false});
     
     const authorLink = document.getElementById('author-link');
     authorLink.addEventListener('mousedown', (e) => { e.stopPropagation(); });
