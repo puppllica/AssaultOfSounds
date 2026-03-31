@@ -99,7 +99,6 @@
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
         .btn-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
         .btn { font-size: 1.1rem; cursor: pointer; border: 2px solid #ff8c00; padding: 10px 40px; background: black; color: #ff8c00; text-decoration: none; display: block; min-width: 180px; font-weight: bold; letter-spacing: 2px; pointer-events: auto; }
-        .btn-share { border-color: #1DA1F2; color: #1DA1F2; }
         .btn-top { border-color: #666; color: #aaa; }
         
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
@@ -160,7 +159,7 @@
         <div id="status-text" class="blink" style="font-size: 1.4rem; letter-spacing: 4px; margin-bottom: 25px;">[TAP TO START]</div>
         <div class="sound-notice-box">
             <span class="sound-notice-main">⚠️ 音量にご注意ください / VOLUME CAUTION</span>
-            <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵するオーディオ・シューティングです。<br>
+            <span style="color: #888; font-size: 0.8rem;">このゲームは「音」を頼りに敵を索敵する、<br>AudioShootingGameです。<br>
                 イヤホン・ヘッドホンの使用を強く推奨します。</span>
         </div>
         <div class="instruction-box">
@@ -178,7 +177,7 @@
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
             </div>
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.7</span>
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.8</span>
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
                 <span style="color: #444;">Voice By ondoku3.com</span>
             </div>
@@ -189,7 +188,6 @@
         <h1 id="result-title" style="letter-spacing: 5px; font-size: 1.8rem;">MISSION COMPLETE</h1>
         <div id="score-details" style="margin: 20px 0;"></div>
         <div class="btn-container">
-            <a href="#" id="share-btn" class="btn btn-share" target="_blank">SHARE ON X</a>
             <div id="retry-btn" class="btn">RETRY</div>
             <div id="ace-btn" class="btn btn-ace hidden">ACE MODE</div>
             <div id="top-btn" class="btn btn-top">RETURN TO TOP</div>
@@ -402,7 +400,7 @@
                     const displayDiff = Math.floor(Math.abs(rawDiff) * 100);
                     let errText = '';
 
-                    if (displayDiff <= 3) {
+                    if (displayDiff <= 10) {
                         perfectCombo++;
                         let comboIndex = perfectCombo;
                         if (comboIndex >= comboTexts.length) comboIndex = comboTexts.length - 1;
@@ -474,10 +472,10 @@
     }
 
     function endGame() {
-    // 追加：既にリザルト処理が開始されている場合は中断
-    if (gameState === 'RESULT') return; 
-    gameState = 'RESULT'; 
-    clearInterval(timerInterval);
+        // 追加：既にリザルト処理が開始されている場合は中断
+        if (gameState === 'RESULT') return; 
+        gameState = 'RESULT'; 
+        clearInterval(timerInterval);
         if (enemySource) { enemySource.stop(); enemySource = null; }
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
@@ -521,11 +519,6 @@
             <div class="stat-line">PRECISION BONUS: +${totalPrecisionBonus}</div>
             <h2 style="color:${scoreColor}; font-size:1.8rem; margin-top:20px; letter-spacing:2px;">TOTAL SCORE: ${total}</h2>
         `;
-        
-        const modeSuffix = currentMode === 'ACE' ? ' (ACE MODE)' : '';
-        const shareText = `TOTAL SCORE: ${total}${modeSuffix} #ASSAULTOFSOUNDS`;
-        const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(window.location.href)}`;
-        document.getElementById('share-btn').onclick = (e) => { e.preventDefault(); window.open(shareUrl, '_blank'); };
     }
 
     function flash() { 
