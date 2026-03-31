@@ -92,7 +92,8 @@
         .instruction-en { color: #ff8c00; font-weight: bold; display: block; text-transform: uppercase; border-left: 3px solid #ff8c00; padding-left: 8px; text-align: left; }
         .instruction-jp { color: #888; font-size: 0.75rem; display: block; margin-top: 2px; text-align: left; padding-left: 11px; }
 
-        #footer-tag { position: absolute; bottom: 10px; width: 100%; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; }
+        #footer-tag { position: absolute; bottom: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 0.7rem; color: #444; pointer-events: none; z-index: 200; line-height: 1.4; box-sizing: border-box; }
+        #footer-right { text-align: center; }
 
         #result-screen { background: rgba(0,0,0,0.95); padding-bottom: 60px; }
         .stat-line { font-size: 1rem; margin: 8px; color: #aaa; letter-spacing: 1px; }
@@ -103,6 +104,28 @@
         
         .btn-ace { border-color: #ff0000; color: #ff0000; text-shadow: 0 0 5px #ff0000; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+
+        /* 横向きかつ画面幅1000px以下のデバイス用の調整 */
+        @media screen and (orientation: landscape) and (max-width: 1000px) {
+            #logo { height: 35vh; width: auto; margin-bottom: 10px; }
+            #status-text { margin-bottom: 10px !important; }
+            .sound-notice-box { padding: 10px; margin-bottom: 15px; }
+            
+            #boot-screen { justify-content: flex-start; padding-top: 20px; padding-bottom: 80px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            
+            /* フッターの左右分割配置 */
+            #footer-tag { flex-direction: row; justify-content: space-between; align-items: flex-end; padding: 0 20px; bottom: 10px; }
+            #footer-right { text-align: right; }
+
+            .btn-container { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+            .btn { min-width: 130px; padding: 8px 15px; font-size: 0.9rem; }
+            
+            /* スコア内訳は縦並びを維持 */
+            .stat-line { margin: 2px 0; font-size: 0.85rem; }
+            
+            #result-title { font-size: 1.4rem; margin-bottom: 5px; }
+            #result-screen { justify-content: flex-start; padding-top: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        }
     </style>
 </head>
 <body>
@@ -144,10 +167,14 @@
             </div>
         </div>
         <div id="footer-tag">
-            <div id="test-mode-btn" style="color: #00ff00; margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
-            <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.2</span>
-            Created by <span id="author-link" style="color: #444;">Asao</span><br>
-            <span style="color: #444;">Voice By ondoku3.com</span>
+            <div id="footer-left">
+                <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
+            </div>
+            <div id="footer-right">
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.1.6</span>
+                Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
+                <span style="color: #444;">Voice By ondoku3.com</span>
+            </div>
         </div>
     </div>
 
