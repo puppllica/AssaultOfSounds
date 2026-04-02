@@ -71,11 +71,10 @@
 
         #test-feedback { position: absolute; top: 60%; width: 100%; text-align: center; font-weight: bold; font-size: 1.2rem; color: #00ff00; text-shadow: 0 0 5px #00ff00; pointer-events: none; z-index: 150; opacity: 0; transition: opacity 0.2s; line-height: 1.5; }
 
-        #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; align-items: center; }
+        #hud { position: absolute; top: 80px; width: 100%; display: flex; justify-content: space-around; font-size: 1.2rem; pointer-events: none; z-index: 110; font-weight: bold; }
         #hud.ace-active { color: #ff0000; text-shadow: 0 0 5px #ff0000; }
         #hud.test-active { color: #00ff00; text-shadow: 0 0 5px #00ff00; }
-        #timer-box { min-width: 140px; text-align: right; }
-        #hits-box { min-width: 140px; text-align: left; }
+        #timer-box { min-width: 140px; text-align: left; }
         
         #overlay { position: absolute; width: 100%; height: 100%; background: rgba(255,140,0,0.4); pointer-events: none; opacity: 0; z-index: 80; }
         #overlay.ace-active { background: rgba(255,0,0,0.4) !important; }
@@ -151,9 +150,10 @@
 
 <div id="hud" class="hidden">
     <div id="hits-box">HITS: <span id="hits">0</span> / 10</div>
-    <div id="in-game-restart-btn" style="color: #888; font-size: 1rem; cursor: pointer; pointer-events: auto; padding: 0 10px;">[RESTART]</div>
     <div id="timer-box">TIME: <span id="timer">60.0</span>s</div>
 </div>
+
+<div id="in-game-restart-btn" class="hidden" style="position: absolute; bottom: 66%; left: 50%; transform: translateX(-50%); color: #888; font-size: 1.2rem; cursor: pointer; pointer-events: auto; z-index: 120; font-weight: bold; letter-spacing: 2px;">[RESTART]</div>
 
 <div id="ui-layer">
     <div id="boot-screen" class="screen">
@@ -179,7 +179,7 @@
                 <div id="test-mode-btn" style="color: #00ff00; font-size: 0.9rem; letter-spacing: 2px; pointer-events: auto; cursor: pointer; font-weight: bold;">[ SOUND TEST ]</div>
             </div>
             <div id="footer-right">
-                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.2.1</span>
+                <span id="version-text" style="color: #666; margin-bottom: 2px; display: block;">Ver 1.1.2.2</span>
                 Created by <span id="author-link" style="color: #444; pointer-events: auto;">Asao</span><br>
                 <span style="color: #444;">Voice By ondoku3.com</span>
             </div>
@@ -310,6 +310,7 @@
         document.getElementById('result-screen').classList.add('hidden');
         document.getElementById('game-frame').classList.remove('hidden');
         document.getElementById('hud').classList.remove('hidden');
+        document.getElementById('in-game-restart-btn').classList.remove('hidden'); // リスタートボタン表示
         document.getElementById('hits').innerText = hits;
         document.getElementById('timer').innerText = timeLeft.toFixed(1);
         
@@ -402,6 +403,7 @@
                     const displayDiff = Math.floor(Math.abs(rawDiff) * 100);
                     let errText = '';
 
+                    // サウンドテストのコンボ判定閾値は 10 のまま維持
                     if (displayDiff <= 10) {
                         perfectCombo++;
                         let comboIndex = perfectCombo;
@@ -467,6 +469,7 @@
         document.getElementById('test-feedback').style.opacity = '0';
         document.getElementById('game-frame').classList.add('hidden');
         document.getElementById('hud').classList.add('hidden');
+        document.getElementById('in-game-restart-btn').classList.add('hidden'); // リスタートボタン非表示
         document.getElementById('test-mode-label').classList.add('hidden');
         document.getElementById('test-indicator').classList.add('hidden');
         document.getElementById('result-screen').classList.add('hidden');
@@ -481,6 +484,7 @@
         if (mainSource) { mainSource.stop(); mainSource = null; }
         document.getElementById('reticle').style.opacity = '0';
         document.getElementById('game-frame').classList.add('hidden');
+        document.getElementById('in-game-restart-btn').classList.add('hidden'); // リスタートボタン非表示
 
         const isCleared = hits >= 10;
         const resultTitle = document.getElementById('result-title');
@@ -529,6 +533,7 @@
     }
 
     const handleAction = (e) => {
+        // リスタートボタンが押されたイベントは伝播させないため、ここで除外される
         if (isWaitingToReturn) {
             e.preventDefault();
             returnToBoot();
@@ -552,6 +557,7 @@
     authorLink.addEventListener('mousedown', (e) => { e.stopPropagation(); });
     authorLink.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: false});
 
+    // プレイ中のリスタートボタン処理（多重ループ起動防止付き）
     const inGameRestartBtn = document.getElementById('in-game-restart-btn');
     const handleInGameRestart = (e) => {
         e.stopPropagation();
